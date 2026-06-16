@@ -1,0 +1,14 @@
+[gd_scene format=3 uid="uid://bmcwnnt85t56w"]
+
+[ext_resource type="Script" uid="uid://dgrnt1kdw5gtp" path="res://scenes/ui/hud.gd" id="1_0mwgc"]
+
+[node name="HUD" type="CanvasLayer" unique_id=1880468031]
+
+[node name="Root" type="Control" parent="." unique_id=175577931]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_0mwgc")
