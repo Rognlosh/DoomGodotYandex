@@ -1,9 +1,8 @@
 class_name Hud
 extends Control
-## Экранный HUD: здоровье (полоска + число) слева внизу, патроны справа («∞» —
-## плейсхолдер до системы патронов на Этапе 2). Всё рисуется кодом (ноль веса билда).
-## Также показывает оверлей game-over и ловит клавишу рестарта — для этого работает
-## даже на паузе (PROCESS_MODE_ALWAYS), т.к. при смерти игра ставится на паузу.
+## Экранный HUD: здоровье (полоска + число) слева внизу, патроны активного оружия
+## справа. Всё рисуется кодом (ноль веса билда). Также показывает оверлей game-over
+## и ловит клавишу рестарта — для этого работает даже на паузе (PROCESS_MODE_ALWAYS).
 
 ## Игрок нажал клавишу на экране смерти. main снимет паузу и перезагрузит сцену.
 signal restart_requested
@@ -34,6 +33,14 @@ var _current: float = 0.0
 var _maximum: float = 1.0
 var _game_over: bool = false
 
+# --- Патроны активного оружия ---
+# Тип, который сейчас отображаем (задаёт main по активному оружию).
+var _active_type: StringName = &""
+var _ammo_current: int = 0
+var _ammo_max: int = 0
+# Пока данных о патронах нет — рисуем «∞» (фолбэк, если система не подключена).
+var _ammo_known: bool = false
+
 
 func _ready() -> void:
 	# Не перехватываем мышь — клики/выстрелы идут мимо HUD к игре.
@@ -48,6 +55,24 @@ func _ready() -> void:
 func set_health(current: float, maximum: float) -> void:
 	_current = current
 	_maximum = maximum
+	queue_redraw()
+
+
+## Какой тип патронов показывать. Задаёт main по активному оружию
+## (при переключении стволов — активное оружие).
+func set_active_ammo_type(type: StringName) -> void:
+	_active_type = type
+	queue_redraw()
+
+
+## Обновить патроны. Подключается к AmmoComponent.ammo_changed.
+## Реагируем только на активный тип — остальные пулы на HUD не показываем.
+func on_ammo_changed(type: StringName, current: int, maximum: int) -> void:
+	if type != _active_type:
+		return
+	_ammo_current = current
+	_ammo_max = maximum
+	_ammo_known = true
 	queue_redraw()
 
 
@@ -93,8 +118,8 @@ func _draw_hud() -> void:
 	draw_string(font, bar_pos - Vector2(0.0, 8.0), hp_text,
 			HORIZONTAL_ALIGNMENT_LEFT, -1, hp_font_size, _TEXT)
 
-	# --- Патроны (низ-справа), пока «∞» ---
-	var ammo := "∞"
+	# --- Патроны (низ-справа). Число активного типа; «∞» — пока система не подключена. ---
+	var ammo := str(_ammo_current) if _ammo_known else "∞"
 	var ammo_w := font.get_string_size(ammo, HORIZONTAL_ALIGNMENT_LEFT, -1, ammo_font_size).x
 	draw_string(font, Vector2(size.x - margin - ammo_w, size.y - margin), ammo,
 			HORIZONTAL_ALIGNMENT_LEFT, -1, ammo_font_size, _TEXT)
