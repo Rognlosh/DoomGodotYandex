@@ -64,8 +64,8 @@ func _unhandled_input(event: InputEvent) -> void:
 	var key_pressed := event is InputEventKey and event.is_pressed() and not event.is_echo()
 	var click_pressed := event is InputEventMouseButton and event.is_pressed()
 	if key_pressed or click_pressed:
-		restart_requested.emit()
 		get_viewport().set_input_as_handled()
+		restart_requested.emit()
 
 
 func _draw() -> void:
