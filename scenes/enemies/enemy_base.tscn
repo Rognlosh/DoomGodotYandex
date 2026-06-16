@@ -1,0 +1,25 @@
+[gd_scene format=3 uid="uid://1hb3ai71rj5u"]
+
+[ext_resource type="Script" uid="uid://dc5ocp1bxufs1" path="res://scenes/enemies/enemy_base.gd" id="1_qty17"]
+[ext_resource type="Script" uid="uid://3xtjeljrqxo1" path="res://scripts/health_component.gd" id="2_pkqou"]
+
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_satqt"]
+radius = 0.4
+height = 1.8
+
+[node name="Enemy" type="CharacterBody3D" unique_id=360318765]
+script = ExtResource("1_qty17")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=1641552836]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
+shape = SubResource("CapsuleShape3D_satqt")
+
+[node name="Sprite3D" type="Sprite3D" parent="." unique_id=913123013]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
+pixel_size = 0.04
+billboard = 2
+alpha_cut = 1
+texture_filter = 0
+
+[node name="HealthComponent" type="Node" parent="." unique_id=67558913]
+script = ExtResource("2_pkqou")
