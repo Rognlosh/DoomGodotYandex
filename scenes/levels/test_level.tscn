@@ -1,6 +1,7 @@
 [gd_scene format=3 uid="uid://ppwfb1508l0s"]
 
 [ext_resource type="PackedScene" uid="uid://djyxa4b1xgyjk" path="res://scenes/enemies/melee_grunt.tscn" id="1_jbqir"]
+[ext_resource type="PackedScene" uid="uid://capg6k5fgvtti" path="res://scenes/pickups/ammo_pickup.tscn" id="2_yautc"]
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_3hp5k"]
 albedo_color = Color(0.16274172, 0.12389998, 0.59, 1)
@@ -39,3 +40,12 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.2, 4)
 
 [node name="Enemy" parent="." unique_id=360318765 instance=ExtResource("1_jbqir")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5.0556183, 0.2, -6)
+
+[node name="Pickup" parent="." unique_id=1531948811 instance=ExtResource("2_yautc")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 7.146073, 0, 0.31606698)
+
+[node name="Pickup2" parent="." unique_id=952530953 instance=ExtResource("2_yautc")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -4.7057643, 0, -2.6470685)
+
+[node name="Pickup3" parent="." unique_id=2037795098 instance=ExtResource("2_yautc")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4.5449023, 0, 1.6964359)

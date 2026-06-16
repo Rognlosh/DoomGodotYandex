@@ -32,8 +32,8 @@ func _ready() -> void:
 	_setup_hud(player)
 
 
-# Поднимаем HUD и связываем его со здоровьем игрока.
-# signal up: HealthComponent эмитит — HUD/main подписываются, сам компонент о них не знает.
+# Поднимаем HUD и связываем его со здоровьем и патронами игрока.
+# signal up: компоненты эмитят — HUD/main подписываются, сами компоненты о них не знают.
 func _setup_hud(player: Node3D) -> void:
 	if hud_scene == null:
 		push_error("Main: в инспекторе не назначен hud_scene.")
@@ -56,6 +56,30 @@ func _setup_hud(player: Node3D) -> void:
 	health.died.connect(_on_player_died)
 	# Компонент шлёт health_changed только при изменении — стартовое значение пушим вручную.
 	_hud.set_health(health.current_health, health.max_health)
+
+	_setup_ammo(player)
+
+
+# Связываем боезапас игрока с HUD. signal up — как со здоровьем.
+func _setup_ammo(player: Node3D) -> void:
+	var ammo := player.get_node_or_null("AmmoComponent") as AmmoComponent
+	if ammo == null:
+		push_error("Main: у игрока не найден AmmoComponent.")
+		return
+
+	# HUD показывает патроны активного оружия. Сейчас оружие одно — берём его ammo_type.
+	# get(&"prop") — динамическое чтение свойства (у оружия нет class_name для типизации).
+	var weapon := player.get_node_or_null("WeaponLayer/Weapon")
+	var type: StringName = &"bullets"
+	if weapon != null:
+		var t: Variant = weapon.get(&"ammo_type")
+		if t != null:
+			type = t
+
+	_hud.set_active_ammo_type(type)
+	ammo.ammo_changed.connect(_hud.on_ammo_changed)
+	# Стартовое значение пушим вручную (компонент шлёт сигнал только при изменении).
+	_hud.on_ammo_changed(type, ammo.get_ammo(type), ammo.get_max(type))
 
 
 # Игрок умер: стоп всей игры, свободная мышь, оверлей. Рестарт — по клавише (сигнал от HUD).

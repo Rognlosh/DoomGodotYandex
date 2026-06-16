@@ -2,8 +2,9 @@ extends Control
 ## Компонент-оружие: экранный визуал (пока рисованный плейсхолдер), hitscan, semi-auto.
 ## Лежит в CanvasLayer (screen-space) — как дум-овский ствол поверх камеры.
 ## Сам читает ввод (action "shoot") и стреляет только при захваченном курсоре.
+## Патроны тянет из AmmoComponent игрока по своему ammo_type; нет патронов — сухой щелчок.
 ## Логику урона напрямую не знает: при попадании вызывает take_damage(amount)
-## у цели, если у той есть такой метод (задел под врагов).
+## у цели, если у той есть такой метод.
 
 @export_group("Стрельба")
 ## Урон за одно попадание.
@@ -12,12 +13,18 @@ extends Control
 @export var fire_cooldown: float = 0.2
 ## Дальность луча, м.
 @export var max_range: float = 1000.0
+## Из какого пула патронов стреляет (id типа в AmmoComponent).
+@export var ammo_type: StringName = &"bullets"
+## Сколько патронов тратит один выстрел.
+@export var ammo_per_shot: int = 1
 
 @export_group("Эффекты")
 ## Сколько секунд горит вспышка у дула.
 @export var flash_duration: float = 0.05
-## Звук выстрела (опционально). Молчит, пока ресурс не назначен в инспекторе.
+## Звук выстрела (опционально). Молчит, пока ресурс не назначен.
 @export var shot_sound: AudioStream
+## Звук «пусто» при выстреле без патронов (опционально).
+@export var empty_sound: AudioStream
 
 # --- Плейсхолдер-визуал (временный; заменим на TextureRect со спрайтом, когда будет арт) ---
 const _GUN_COLOR := Color(0.18, 0.18, 0.2)
@@ -32,6 +39,8 @@ var _flash_timer: float = 0.0
 var _exclude: Array[RID] = []
 # Плеер звука. Создаём в коде, чтобы не держать лишний узел в сцене.
 var _audio: AudioStreamPlayer
+# Боезапас игрока. Если не найден — оружие стреляет бесконечно (фолбэк/автономность).
+var _ammo: AmmoComponent
 
 
 func _ready() -> void:
@@ -41,11 +50,13 @@ func _ready() -> void:
 	resized.connect(queue_redraw)
 
 	# Исключаем тело игрока из луча: луч стартует из камеры внутри его капсулы.
+	# Заодно берём с тела компонент боезапаса (сосед — AmmoComponent).
 	var body := _find_collision_ancestor()
 	if body != null:
 		_exclude = [body.get_rid()]
+		_ammo = body.get_node_or_null("AmmoComponent") as AmmoComponent
 
-	# Плеер звука. Играет, только если назначен shot_sound (плейсхолдер пока молчит).
+	# Плеер звука. Играет, только если назначен соответствующий ресурс.
 	_audio = AudioStreamPlayer.new()
 	add_child(_audio)
 
@@ -70,7 +81,13 @@ func _unhandled_input(event: InputEvent) -> void:
 func _try_fire() -> void:
 	if _cooldown_timer > 0.0:
 		return
+	# Нет патронов — сухой щелчок, не стреляем. (Если компонента нет — стреляем бесконечно.)
+	if _ammo != null and not _ammo.has_ammo(ammo_type, ammo_per_shot):
+		_play_sound(empty_sound)
+		return
 	_cooldown_timer = fire_cooldown
+	if _ammo != null:
+		_ammo.consume(ammo_type, ammo_per_shot)
 	_show_effects()
 	_do_hitscan()
 
@@ -78,8 +95,12 @@ func _try_fire() -> void:
 func _show_effects() -> void:
 	_flash_timer = flash_duration
 	queue_redraw()  # показать вспышку
-	if shot_sound != null:
-		_audio.stream = shot_sound
+	_play_sound(shot_sound)
+
+
+func _play_sound(stream: AudioStream) -> void:
+	if stream != null:
+		_audio.stream = stream
 		_audio.play()
 
 
@@ -101,8 +122,7 @@ func _do_hitscan() -> void:
 		return
 
 	var collider: Object = result.get("collider")
-	# Если у цели есть take_damage — наносим урон. Врагов пока нет, поэтому
-	# по геометрии (стены/препятствия) ничего не происходит.
+	# Если у цели есть take_damage — наносим урон.
 	if collider != null and collider.has_method("take_damage"):
 		collider.take_damage(damage)
 

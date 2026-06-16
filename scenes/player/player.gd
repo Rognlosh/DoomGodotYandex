@@ -36,6 +36,8 @@ extends CharacterBody3D
 @onready var head: Node3D = $Head
 # Здоровье игрока — тот же переиспользуемый компонент, что у врага.
 @onready var _health: HealthComponent = $HealthComponent
+# Боезапас игрока — переиспользуемый компонент (пулы патронов по типам).
+@onready var _ammo: AmmoComponent = $AmmoComponent
 
 # Таймеры отзывчивости прыжка (обратный отсчёт в секундах).
 var _jump_buffer_timer: float = 0.0
@@ -52,6 +54,11 @@ func _ready() -> void:
 # Реакцию на died/health_changed решают снаружи (main → пауза+оверлей, HUD → бар).
 func take_damage(amount: float) -> void:
 	_health.take_damage(amount)
+
+# Конвенция пополнения: тело принимает патроны и делегирует в AmmoComponent
+# (как take_damage — в HealthComponent). Пикап не знает о внутренностях игрока.
+func add_ammo(type: StringName, amount: int) -> int:
+	return _ammo.add_ammo(type, amount)
 
 
 func _input(event: InputEvent) -> void:
