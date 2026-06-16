@@ -1,6 +1,8 @@
 [gd_scene format=3 uid="uid://dq8ho3pvydr6o"]
 
 [ext_resource type="Script" uid="uid://cco4cbmdmmdq0" path="res://scenes/player/player.gd" id="1_8afob"]
+[ext_resource type="Script" uid="uid://bkwpd6vnsn8hq" path="res://scenes/player/weapon.gd" id="2_dovo2"]
+[ext_resource type="Script" uid="uid://bp5jo1rxsxdxc" path="res://scenes/ui/crosshair.gd" id="3_gmlin"]
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_dovo2"]
 radius = 0.4
@@ -17,3 +19,23 @@ shape = SubResource("CapsuleShape3D_dovo2")
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.6, 0)
 
 [node name="Camera3D" type="Camera3D" parent="Head" unique_id=2013823340]
+
+[node name="WeaponLayer" type="CanvasLayer" parent="." unique_id=275239724]
+
+[node name="Weapon" type="Control" parent="WeaponLayer" unique_id=1035936759]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("2_dovo2")
+
+[node name="Crosshair" type="Control" parent="WeaponLayer" unique_id=1686118722]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("3_gmlin")

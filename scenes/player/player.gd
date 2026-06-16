@@ -46,17 +46,21 @@ func _ready() -> void:
 	Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
 
 
-func _unhandled_input(event: InputEvent) -> void:
-	# Esc — освобождаем курсор.
-	if event.is_action_pressed(&"ui_cancel"):
-		Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
-		return
-
-	# Клик по окну — захватываем курсор (нужно для веба: pointer lock требует жеста).
+func _input(event: InputEvent) -> void:
+	# Захват курсора по клику обрабатываем здесь, в _input (раньше _unhandled_input),
+	# и поглощаем событие — чтобы «захватывающий» клик только захватил курсор
+	# и не дошёл до оружия как выстрел.
 	if event is InputEventMouseButton:
 		var button := event as InputEventMouseButton
 		if button.pressed and Input.get_mouse_mode() != Input.MOUSE_MODE_CAPTURED:
 			Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
+			get_viewport().set_input_as_handled()
+
+
+func _unhandled_input(event: InputEvent) -> void:
+	# Esc — освобождаем курсор.
+	if event.is_action_pressed(&"ui_cancel"):
+		Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
 		return
 
 	# Обзор мышью работает только при захваченном курсоре.
