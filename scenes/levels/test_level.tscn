@@ -1,21 +1,33 @@
 [gd_scene format=3 uid="uid://ppwfb1508l0s"]
 
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_3hp5k"]
+albedo_color = Color(0.16274172, 0.12389998, 0.59, 1)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_jbqir"]
+albedo_color = Color(1, 0.34509805, 1, 1)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_yautc"]
+albedo_color = Color(0.07999998, 1, 0.14133328, 1)
+
 [node name="TestLevel" type="Node3D" unique_id=262934512]
 
 [node name="Floor" type="CSGBox3D" parent="." unique_id=1732992609]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.5, 0)
 use_collision = true
 size = Vector3(40, 1, 40)
+material = SubResource("StandardMaterial3D_3hp5k")
 
 [node name="Obstacle1" type="CSGBox3D" parent="." unique_id=825133986]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4, 1, -3)
 use_collision = true
 size = Vector3(2, 2, 2)
+material = SubResource("StandardMaterial3D_jbqir")
 
 [node name="Obstacle2" type="CSGBox3D" parent="." unique_id=1212535922]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -5, 2, -6)
 use_collision = true
 size = Vector3(3, 4, 1)
+material = SubResource("StandardMaterial3D_yautc")
 
 [node name="DirectionalLight3D" type="DirectionalLight3D" parent="." unique_id=12579856]
 transform = Transform3D(1, 0, 0, 0, 0.64278764, 0.76604444, 0, -0.76604444, 0.64278764, 0, 2.5339606, 0)
