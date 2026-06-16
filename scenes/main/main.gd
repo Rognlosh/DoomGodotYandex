@@ -1,12 +1,16 @@
 extends Node3D
-## Единая точка входа в игру.
-## Сейчас задача минимальна: загрузить текущий уровень и поставить игрока
-## в точку спавна. Позже здесь появятся смена уровней, HUD, пауза, game-over.
+## Единая точка входа. Грузит уровень, спавнит игрока, поднимает HUD
+## и владеет game-over/рестартом.
 
 ## Сцена уровня (назначается в инспекторе).
 @export var level_scene: PackedScene
 ## Сцена игрока (назначается в инспекторе).
 @export var player_scene: PackedScene
+## Сцена HUD (назначается в инспекторе). Корень — CanvasLayer, внутри узел "Root" (Hud).
+@export var hud_scene: PackedScene
+
+# Ссылка на узел HUD (Control), чтобы дёргать его методы.
+var _hud: Hud
 
 
 func _ready() -> void:
@@ -24,3 +28,44 @@ func _ready() -> void:
 	var spawn := level.get_node_or_null("PlayerSpawn")
 	if spawn is Node3D:
 		player.global_transform = (spawn as Node3D).global_transform
+
+	_setup_hud(player)
+
+
+# Поднимаем HUD и связываем его со здоровьем игрока.
+# signal up: HealthComponent эмитит — HUD/main подписываются, сам компонент о них не знает.
+func _setup_hud(player: Node3D) -> void:
+	if hud_scene == null:
+		push_error("Main: в инспекторе не назначен hud_scene.")
+		return
+
+	var hud_root := hud_scene.instantiate()
+	add_child(hud_root)
+	_hud = hud_root.get_node_or_null("Root") as Hud
+	if _hud == null:
+		push_error("Main: в hud_scene не найден узел 'Root' со скриптом Hud.")
+		return
+	_hud.restart_requested.connect(_on_restart_requested)
+
+	# Здоровье игрока — тот же HealthComponent, что у врага.
+	var health := player.get_node_or_null("HealthComponent") as HealthComponent
+	if health == null:
+		push_error("Main: у игрока не найден HealthComponent.")
+		return
+	health.health_changed.connect(_hud.set_health)
+	health.died.connect(_on_player_died)
+	# Компонент шлёт health_changed только при изменении — стартовое значение пушим вручную.
+	_hud.set_health(health.current_health, health.max_health)
+
+
+# Игрок умер: стоп всей игры, свободная мышь, оверлей. Рестарт — по клавише (сигнал от HUD).
+func _on_player_died() -> void:
+	get_tree().paused = true
+	Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
+	_hud.show_game_over()
+
+
+func _on_restart_requested() -> void:
+	# Снять паузу ДО перезагрузки, иначе новая сцена стартует замороженной.
+	get_tree().paused = false
+	get_tree().reload_current_scene()

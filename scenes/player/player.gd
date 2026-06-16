@@ -34,6 +34,8 @@ extends CharacterBody3D
 
 # Узел-«голова»: точка наклона (pitch). Камера висит на нём.
 @onready var head: Node3D = $Head
+# Здоровье игрока — тот же переиспользуемый компонент, что у врага.
+@onready var _health: HealthComponent = $HealthComponent
 
 # Таймеры отзывчивости прыжка (обратный отсчёт в секундах).
 var _jump_buffer_timer: float = 0.0
@@ -44,6 +46,12 @@ func _ready() -> void:
 	# На старте курсор свободен. В браузере захват (pointer lock) разрешён
 	# только после клика пользователя — поэтому захватываем по клику мыши.
 	Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
+
+
+# Конвенция урона: тело принимает урон и делегирует в компонент (как у врага).
+# Реакцию на died/health_changed решают снаружи (main → пауза+оверлей, HUD → бар).
+func take_damage(amount: float) -> void:
+	_health.take_damage(amount)
 
 
 func _input(event: InputEvent) -> void:

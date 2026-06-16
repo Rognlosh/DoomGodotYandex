@@ -3,6 +3,7 @@
 [ext_resource type="Script" uid="uid://cco4cbmdmmdq0" path="res://scenes/player/player.gd" id="1_8afob"]
 [ext_resource type="Script" uid="uid://bkwpd6vnsn8hq" path="res://scenes/player/weapon.gd" id="2_dovo2"]
 [ext_resource type="Script" uid="uid://bp5jo1rxsxdxc" path="res://scenes/ui/crosshair.gd" id="3_gmlin"]
+[ext_resource type="Script" uid="uid://3xtjeljrqxo1" path="res://scripts/health_component.gd" id="4_lvxji"]
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_dovo2"]
 radius = 0.4
@@ -39,3 +40,7 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("3_gmlin")
+
+[node name="HealthComponent" type="Node" parent="." unique_id=1053890916]
+script = ExtResource("4_lvxji")
+max_health = 100.0
