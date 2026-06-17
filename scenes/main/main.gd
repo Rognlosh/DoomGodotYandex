@@ -11,6 +11,8 @@ extends Node3D
 
 # Ссылка на узел HUD (Control), чтобы дёргать его методы.
 var _hud: Hud
+# Боезапас игрока — для пуша актуального счётчика на HUD при смене оружия.
+var _ammo: AmmoComponent
 
 
 func _ready() -> void:
@@ -62,24 +64,39 @@ func _setup_hud(player: Node3D) -> void:
 
 # Связываем боезапас игрока с HUD. signal up — как со здоровьем.
 func _setup_ammo(player: Node3D) -> void:
-	var ammo := player.get_node_or_null("AmmoComponent") as AmmoComponent
-	if ammo == null:
+	_ammo = player.get_node_or_null("AmmoComponent") as AmmoComponent
+	if _ammo == null:
 		push_error("Main: у игрока не найден AmmoComponent.")
 		return
 
-	# HUD показывает патроны активного оружия. Сейчас оружие одно — берём его ammo_type.
-	# get(&"prop") — динамическое чтение свойства (у оружия нет class_name для типизации).
-	var weapon := player.get_node_or_null("WeaponLayer/Weapon")
-	var type: StringName = &"bullets"
-	if weapon != null:
-		var t: Variant = weapon.get(&"ammo_type")
-		if t != null:
-			type = t
+	# HUD слышит изменения любого пула, но рисует только активный тип.
+	_ammo.ammo_changed.connect(_hud.on_ammo_changed)
 
+	# Менеджер оружия: при смене ствола обновляем активный тип патронов на HUD.
+	var weapons := player.get_node_or_null("WeaponLayer/Weapons") as WeaponManager
+	if weapons != null:
+		weapons.weapon_changed.connect(_on_weapon_changed)
+		_on_weapon_changed(weapons.get_active_weapon())  # стартовая синхронизация
+		# Эффект попадания по поверхности (дымок). Узел ImpactSmoke — в main.tscn.
+		var impacts := get_node_or_null("ImpactSmoke") as ImpactSmoke
+		if impacts != null:
+			weapons.surface_hit.connect(impacts.spawn)
+	else:
+		# Фолбэк, если менеджера нет.
+		_sync_ammo_type(&"bullets")
+
+
+# Сменилось активное оружие: показываем на HUD патроны его типа.
+func _on_weapon_changed(weapon: Weapon) -> void:
+	if weapon == null:
+		return
+	_sync_ammo_type(weapon.ammo_type)
+
+
+func _sync_ammo_type(type: StringName) -> void:
 	_hud.set_active_ammo_type(type)
-	ammo.ammo_changed.connect(_hud.on_ammo_changed)
-	# Стартовое значение пушим вручную (компонент шлёт сигнал только при изменении).
-	_hud.on_ammo_changed(type, ammo.get_ammo(type), ammo.get_max(type))
+	# Компонент шлёт сигнал только при изменении — текущее значение пушим вручную.
+	_hud.on_ammo_changed(type, _ammo.get_ammo(type), _ammo.get_max(type))
 
 
 # Игрок умер: стоп всей игры, свободная мышь, оверлей. Рестарт — по клавише (сигнал от HUD).

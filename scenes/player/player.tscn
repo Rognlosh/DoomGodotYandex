@@ -2,6 +2,7 @@
 
 [ext_resource type="Script" uid="uid://cco4cbmdmmdq0" path="res://scenes/player/player.gd" id="1_8afob"]
 [ext_resource type="Script" uid="uid://bkwpd6vnsn8hq" path="res://scenes/player/weapon.gd" id="2_dovo2"]
+[ext_resource type="Script" uid="uid://c7h43hs6k0eox" path="res://scenes/player/weapon_manager.gd" id="3_0owmy"]
 [ext_resource type="Script" uid="uid://bp5jo1rxsxdxc" path="res://scenes/ui/crosshair.gd" id="3_gmlin"]
 [ext_resource type="Script" uid="uid://3xtjeljrqxo1" path="res://scripts/health_component.gd" id="4_lvxji"]
 [ext_resource type="Script" uid="uid://fe6xb17afane" path="res://scripts/ammo_component.gd" id="5_75vfm"]
@@ -13,7 +14,14 @@ height = 1.8
 
 [sub_resource type="Resource" id="Resource_qek5x"]
 script = ExtResource("6_0owmy")
-start_amount = 14
+start_amount = 100
+metadata/_custom_type_script = "uid://bguw54o77pkla"
+
+[sub_resource type="Resource" id="Resource_5gtgg"]
+script = ExtResource("6_0owmy")
+id = &"shells"
+max_amount = 50
+start_amount = 8
 metadata/_custom_type_script = "uid://bguw54o77pkla"
 
 [node name="Player" type="CharacterBody3D" unique_id=21007273 groups=["player"]]
@@ -30,15 +38,6 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.6, 0)
 
 [node name="WeaponLayer" type="CanvasLayer" parent="." unique_id=275239724]
 
-[node name="Weapon" type="Control" parent="WeaponLayer" unique_id=1035936759]
-layout_mode = 3
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-script = ExtResource("2_dovo2")
-
 [node name="Crosshair" type="Control" parent="WeaponLayer" unique_id=1686118722]
 layout_mode = 3
 anchors_preset = 15
@@ -48,10 +47,55 @@ grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("3_gmlin")
 
+[node name="Weapons" type="Node" parent="WeaponLayer" unique_id=276871274]
+script = ExtResource("3_0owmy")
+
+[node name="Pistol" type="Control" parent="WeaponLayer/Weapons" unique_id=1035936759]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("2_dovo2")
+slot = 2
+
+[node name="Shotgun" type="Control" parent="WeaponLayer/Weapons" unique_id=2027224495]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("2_dovo2")
+slot = 3
+damage = 8.0
+pellets = 7
+spread_degrees = 5.0
+ammo_type = &"shells"
+body_size = Vector2(110, 56)
+barrel_size = Vector2(40, 54)
+
+[node name="MachineGun" type="Control" parent="WeaponLayer/Weapons" unique_id=1746319400]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("2_dovo2")
+slot = 4
+damage = 8.0
+fire_mode = 1
+fire_cooldown = 0.1
+spread_degrees = 2.0
+body_size = Vector2(90, 64)
+barrel_size = Vector2(22, 90)
+
 [node name="HealthComponent" type="Node" parent="." unique_id=1053890916]
 script = ExtResource("4_lvxji")
 max_health = 100.0
 
 [node name="AmmoComponent" type="Node" parent="." unique_id=1004497769]
 script = ExtResource("5_75vfm")
-ammo_types = Array[ExtResource("6_0owmy")]([SubResource("Resource_qek5x")])
+ammo_types = Array[ExtResource("6_0owmy")]([SubResource("Resource_qek5x"), SubResource("Resource_5gtgg")])

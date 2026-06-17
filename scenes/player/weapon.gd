@@ -1,19 +1,41 @@
+class_name Weapon
 extends Control
-## Компонент-оружие: экранный визуал (пока рисованный плейсхолдер), hitscan, semi-auto.
-## Лежит в CanvasLayer (screen-space) — как дум-овский ствол поверх камеры.
-## Сам читает ввод (action "shoot") и стреляет только при захваченном курсоре.
-## Патроны тянет из AmmoComponent игрока по своему ammo_type; нет патронов — сухой щелчок.
-## Логику урона напрямую не знает: при попадании вызывает take_damage(amount)
-## у цели, если у той есть такой метод.
+## Экранное оружие (screen-space, как ствол в DOOM): визуал-плейсхолдер + hitscan.
+## База для всех стволов. Расширение: ЦИФРАМИ через @export (пистолет/дробовик —
+## одна логика, разные значения) либо ПОВЕДЕНИЕМ через переопределение хука _fire()
+## (ближний бой/ракетомёт — позже).
+## Ввод оружие само НЕ читает — им управляет WeaponManager (роутит выстрел в активный
+## ствол и переключает оружие).
+
+## Луч попал в неуязвимую поверхность (стена/пол, не враг). (position, normal) —
+## для эффекта попадания. Подписчик (через WeaponManager → main) играет дымок.
+signal surface_hit(position: Vector3, normal: Vector3)
+
+## Режим огня. SEMI — выстрел на нажатие; AUTO — очередь, пока зажата кнопка.
+enum FireMode { SEMI, AUTO }
+
+@export_group("Слот")
+## Клавиша выбора (1–5). 0 — слот не назначен, менеджер такой ствол напрямую не активирует.
+@export var slot: int = 0
 
 @export_group("Стрельба")
-## Урон за одно попадание.
+## Урон за одно попадание (за одну дробину).
 @export var damage: float = 10.0
-## Минимальная пауза между выстрелами, с. Semi-auto: один выстрел на клик, но не чаще.
+## Режим огня.
+@export var fire_mode: FireMode = FireMode.SEMI
+## Минимальная пауза между выстрелами, с.
 @export var fire_cooldown: float = 0.2
 ## Дальность луча, м.
 @export var max_range: float = 1000.0
-## Из какого пула патронов стреляет (id типа в AmmoComponent).
+## Лучей за выстрел. 1 — пистолет; >1 — дробовик (веер дробин).
+@export var pellets: int = 1
+## Полуугол разброса дробин, градусы. 0 — строго в точку прицела.
+@export_range(0.0, 45.0) var spread_degrees: float = 0.0
+
+@export_group("Патроны")
+## Тратит ли оружие патроны. false — бесконечное (напр. будущий ближний бой).
+@export var uses_ammo: bool = true
+## Из какого пула стреляет (id типа в AmmoComponent).
 @export var ammo_type: StringName = &"bullets"
 ## Сколько патронов тратит один выстрел.
 @export var ammo_per_shot: int = 1
@@ -26,8 +48,14 @@ extends Control
 ## Звук «пусто» при выстреле без патронов (опционально).
 @export var empty_sound: AudioStream
 
-# --- Плейсхолдер-визуал (временный; заменим на TextureRect со спрайтом, когда будет арт) ---
-const _GUN_COLOR := Color(0.18, 0.18, 0.2)
+@export_group("Плейсхолдер-визуал")
+## Размер «корпуса» ствола, px (заменим на спрайт-арт позже).
+@export var body_size: Vector2 = Vector2(84.0, 60.0)
+## Размер «дула», px.
+@export var barrel_size: Vector2 = Vector2(26.0, 70.0)
+## Цвет плейсхолдера.
+@export var body_color: Color = Color(0.18, 0.18, 0.2)
+
 const _FLASH_OUTER := Color(1.0, 0.7, 0.2, 0.9)
 const _FLASH_INNER := Color(1.0, 0.95, 0.7, 1.0)
 
@@ -35,28 +63,25 @@ const _FLASH_INNER := Color(1.0, 0.95, 0.7, 1.0)
 var _cooldown_timer: float = 0.0
 # Обратный отсчёт показа вспышки, с.
 var _flash_timer: float = 0.0
-# Что исключаем из луча (само тело игрока) — заполняется в _ready.
+# Что исключаем из луча (тело игрока) — заполняется в _ready.
 var _exclude: Array[RID] = []
-# Плеер звука. Создаём в коде, чтобы не держать лишний узел в сцене.
+# Плеер звука.
 var _audio: AudioStreamPlayer
-# Боезапас игрока. Если не найден — оружие стреляет бесконечно (фолбэк/автономность).
+# Боезапас игрока. null — оружие стреляет бесконечно (фолбэк/автономность).
 var _ammo: AmmoComponent
 
 
 func _ready() -> void:
-	# Оружие не должно перехватывать клики мыши (иначе GUI «съест» выстрел).
+	# Оружие не перехватывает клики (иначе GUI «съест» выстрел).
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
-	# Перерисовка при изменении размера окна (важно для веба/ресайза).
 	resized.connect(queue_redraw)
 
-	# Исключаем тело игрока из луча: луч стартует из камеры внутри его капсулы.
-	# Заодно берём с тела компонент боезапаса (сосед — AmmoComponent).
+	# Исключаем тело игрока из луча (камера внутри его капсулы); заодно берём AmmoComponent.
 	var body := _find_collision_ancestor()
 	if body != null:
 		_exclude = [body.get_rid()]
 		_ammo = body.get_node_or_null("AmmoComponent") as AmmoComponent
 
-	# Плеер звука. Играет, только если назначен соответствующий ресурс.
 	_audio = AudioStreamPlayer.new()
 	add_child(_audio)
 
@@ -64,32 +89,61 @@ func _ready() -> void:
 func _process(delta: float) -> void:
 	if _cooldown_timer > 0.0:
 		_cooldown_timer -= delta
-
 	if _flash_timer > 0.0:
 		_flash_timer -= delta
 		if _flash_timer <= 0.0:
 			queue_redraw()  # вспышка погасла — перерисовать без неё
 
 
-func _unhandled_input(event: InputEvent) -> void:
-	# Стреляем по нажатию "shoot" и только при захваченном курсоре.
-	# «Захватывающий» клик сюда не доходит — его поглощает player.gd в _input.
-	if event.is_action_pressed(&"shoot") and Input.get_mouse_mode() == Input.MOUSE_MODE_CAPTURED:
-		_try_fire()
-
-
-func _try_fire() -> void:
+## Попытка выстрела (с проверкой кулдауна и патронов). Зовёт WeaponManager.
+## true — выстрел произошёл.
+func try_fire() -> bool:
 	if _cooldown_timer > 0.0:
-		return
-	# Нет патронов — сухой щелчок, не стреляем. (Если компонента нет — стреляем бесконечно.)
-	if _ammo != null and not _ammo.has_ammo(ammo_type, ammo_per_shot):
+		return false
+	# Нет патронов — сухой щелчок. Ставим кулдаун, чтобы в авто-режиме щелчок не спамил каждый кадр.
+	if uses_ammo and _ammo != null and not _ammo.has_ammo(ammo_type, ammo_per_shot):
 		_play_sound(empty_sound)
-		return
+		_cooldown_timer = fire_cooldown
+		return false
 	_cooldown_timer = fire_cooldown
-	if _ammo != null:
+	if uses_ammo and _ammo != null:
 		_ammo.consume(ammo_type, ammo_per_shot)
 	_show_effects()
-	_do_hitscan()
+	_fire()
+	return true
+
+
+## Хук: ЧТО делает выстрел. По умолчанию — hitscan (веер из pellets лучей с разбросом).
+## Переопредели у наследника для иной атаки (снаряд, ближний бой).
+func _fire() -> void:
+	var camera := get_viewport().get_camera_3d()
+	if camera == null:
+		return
+	var from: Vector3 = camera.global_position
+	var cam_basis: Basis = camera.global_transform.basis
+	var forward: Vector3 = -cam_basis.z  # «вперёд» камеры
+
+	var space_state := camera.get_world_3d().direct_space_state
+	for _i in pellets:
+		var dir: Vector3 = forward
+		if spread_degrees > 0.0:
+			# Случайное отклонение в конусе: смещаем forward по осям камеры.
+			var yaw: float = deg_to_rad(randf_range(-spread_degrees, spread_degrees))
+			var pitch: float = deg_to_rad(randf_range(-spread_degrees, spread_degrees))
+			dir = (forward + cam_basis.x * tan(yaw) + cam_basis.y * tan(pitch)).normalized()
+		var to: Vector3 = from + dir * max_range
+
+		var query := PhysicsRayQueryParameters3D.create(from, to)
+		query.exclude = _exclude
+		var result: Dictionary = space_state.intersect_ray(query)
+		if result.is_empty():
+			continue
+		var collider: Object = result.get("collider")
+		if collider != null and collider.has_method("take_damage"):
+			collider.take_damage(damage)  # урон за каждую попавшую дробину
+		else:
+			# Неуязвимая поверхность — эффект дымка по нормали (по врагам не ставим).
+			surface_hit.emit(result.get("position"), result.get("normal"))
 
 
 func _show_effects() -> void:
@@ -104,50 +158,19 @@ func _play_sound(stream: AudioStream) -> void:
 		_audio.play()
 
 
-func _do_hitscan() -> void:
-	var camera := get_viewport().get_camera_3d()
-	if camera == null:
-		return
-
-	# Луч из позиции камеры (центр экрана) строго вперёд: forward = -Z базиса камеры.
-	var from: Vector3 = camera.global_position
-	var to: Vector3 = from - camera.global_transform.basis.z * max_range
-
-	var space_state := camera.get_world_3d().direct_space_state
-	var query := PhysicsRayQueryParameters3D.create(from, to)
-	query.exclude = _exclude
-	var result: Dictionary = space_state.intersect_ray(query)
-
-	if result.is_empty():
-		return
-
-	var collider: Object = result.get("collider")
-	# Если у цели есть take_damage — наносим урон.
-	if collider != null and collider.has_method("take_damage"):
-		collider.take_damage(damage)
-
-
 func _draw() -> void:
 	var cx: float = size.x * 0.5
 	var bottom: float = size.y
-
-	# --- Плейсхолдер ствола (заменить на TextureRect со спрайтом, когда будет арт) ---
-	var body_w: float = 84.0
-	var body_h: float = 60.0
-	var barrel_w: float = 26.0
-	var barrel_h: float = 70.0
-
-	draw_rect(Rect2(cx - body_w * 0.5, bottom - body_h, body_w, body_h), _GUN_COLOR)
-	draw_rect(Rect2(cx - barrel_w * 0.5, bottom - body_h - barrel_h, barrel_w, barrel_h), _GUN_COLOR)
-
-	# Вспышка у верха ствола — только пока тикает её таймер.
+	draw_rect(Rect2(cx - body_size.x * 0.5, bottom - body_size.y, body_size.x, body_size.y), body_color)
+	draw_rect(Rect2(cx - barrel_size.x * 0.5, bottom - body_size.y - barrel_size.y,
+			barrel_size.x, barrel_size.y), body_color)
 	if _flash_timer > 0.0:
-		var muzzle := Vector2(cx, bottom - body_h - barrel_h)
+		var muzzle := Vector2(cx, bottom - body_size.y - barrel_size.y)
 		draw_circle(muzzle, 26.0, _FLASH_OUTER)
 		draw_circle(muzzle, 14.0, _FLASH_INNER)
 
 
-# Ищем ближайшего предка-CollisionObject3D (тело игрока) вверх по дереву.
+# Ближайший предок-CollisionObject3D (тело игрока) вверх по дереву.
 func _find_collision_ancestor() -> CollisionObject3D:
 	var node: Node = get_parent()
 	while node != null:
