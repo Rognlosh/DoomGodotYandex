@@ -18,6 +18,8 @@ signal restart_requested
 @export var color_low: Color = Color(0.85, 0.2, 0.15)
 ## Доля здоровья, ниже которой полоска краснеет.
 @export_range(0.0, 1.0) var low_threshold: float = 0.3
+## Цвет числа брони.
+@export var color_armor: Color = Color(0.55, 0.72, 0.95)
 
 @export_group("Шрифт")
 @export var hp_font_size: int = 28
@@ -32,6 +34,8 @@ const _OVERLAY := Color(0.45, 0.0, 0.0, 0.5)
 var _current: float = 0.0
 var _maximum: float = 1.0
 var _game_over: bool = false
+var _armor_current: float = 0.0
+var _armor_max: float = 0.0
 
 # --- Патроны активного оружия ---
 # Тип, который сейчас отображаем (задаёт main по активному оружию).
@@ -57,6 +61,11 @@ func set_health(current: float, maximum: float) -> void:
 	_maximum = maximum
 	queue_redraw()
 
+## Обновить броню. Подключается к ArmorComponent.armor_changed.
+func set_armor(current: float, maximum: float) -> void:
+	_armor_current = current
+	_armor_max = maximum
+	queue_redraw()
 
 ## Какой тип патронов показывать. Задаёт main по активному оружию
 ## (при переключении стволов — активное оружие).
@@ -117,6 +126,11 @@ func _draw_hud() -> void:
 	var hp_text := "HP %d" % int(roundf(_current))
 	draw_string(font, bar_pos - Vector2(0.0, 8.0), hp_text,
 			HORIZONTAL_ALIGNMENT_LEFT, -1, hp_font_size, _TEXT)
+
+	# Число брони — стопкой над числом HP, в том же углу.
+	var arm_text := "ARM %d" % int(roundf(_armor_current))
+	draw_string(font, bar_pos - Vector2(0.0, 8.0 + hp_font_size + 4.0), arm_text,
+			HORIZONTAL_ALIGNMENT_LEFT, -1, hp_font_size, color_armor)
 
 	# --- Патроны (низ-справа). Число активного типа; «∞» — пока система не подключена. ---
 	var ammo := str(_ammo_current) if _ammo_known else "∞"

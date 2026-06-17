@@ -38,6 +38,8 @@ extends CharacterBody3D
 @onready var _health: HealthComponent = $HealthComponent
 # Боезапас игрока — переиспользуемый компонент (пулы патронов по типам).
 @onready var _ammo: AmmoComponent = $AmmoComponent
+# Броня игрока — отдельное звено перед HP (модель DOOM). Опциональна.
+@onready var _armor: ArmorComponent = get_node_or_null("ArmorComponent")
 
 # Таймеры отзывчивости прыжка (обратный отсчёт в секундах).
 var _jump_buffer_timer: float = 0.0
@@ -53,12 +55,29 @@ func _ready() -> void:
 # Конвенция урона: тело принимает урон и делегирует в компонент (как у врага).
 # Реакцию на died/health_changed решают снаружи (main → пауза+оверлей, HUD → бар).
 func take_damage(amount: float) -> void:
+	# Урон сперва идёт в броню (если есть): она снимает свою долю, остаток — в HP.
+	if _armor != null:
+		amount = _armor.absorb(amount)
 	_health.take_damage(amount)
 
 # Конвенция пополнения: тело принимает патроны и делегирует в AmmoComponent
 # (как take_damage — в HealthComponent). Пикап не знает о внутренностях игрока.
 func add_ammo(type: StringName, amount: int) -> int:
 	return _ammo.add_ammo(type, amount)
+
+# Конвенция лечения: тело лечится и делегирует в HealthComponent.
+# allow_overheal пробрасывает пикап (бонус-склянка/сфера души).
+func heal(amount: float, allow_overheal: bool = false) -> bool:
+	return _health.heal(amount, allow_overheal)
+
+# Конвенция брони: тело принимает броню и делегирует в ArmorComponent.
+# set_mode=true — комплект (установка до points класса klass); false — бонус (+points).
+func add_armor(points: float, klass: int, set_mode: bool) -> bool:
+	if _armor == null:
+		return false
+	if set_mode:
+		return _armor.give_armor(points, klass)
+	return _armor.add_bonus(points)
 
 
 func _input(event: InputEvent) -> void:
