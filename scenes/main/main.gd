@@ -58,7 +58,7 @@ func _setup_hud(player: Node3D) -> void:
 	health.died.connect(_on_player_died)
 	# Компонент шлёт health_changed только при изменении — стартовое значение пушим вручную.
 	_hud.set_health(health.current_health, health.max_health)
-	
+
 	# Броня игрока — отдельный компонент перед HP (если есть). signal up, как со здоровьем.
 	var armor := player.get_node_or_null("ArmorComponent") as ArmorComponent
 	if armor != null:
@@ -80,20 +80,26 @@ func _setup_ammo(player: Node3D) -> void:
 
 	# Менеджер оружия: при смене ствола обновляем активный тип патронов на HUD.
 	var weapons := player.get_node_or_null("WeaponLayer/Weapons") as WeaponManager
-	if weapons != null:
-		weapons.weapon_changed.connect(_on_weapon_changed)
-		_on_weapon_changed(weapons.get_active_weapon())  # стартовая синхронизация
-		# Эффект попадания по поверхности (дымок). Узел ImpactSmoke — в main.tscn.
-		var impacts := get_node_or_null("ImpactSmoke") as ImpactSmoke
-		if impacts != null:
-			weapons.surface_hit.connect(impacts.spawn)
-		# Эффект попадания по врагу (звёзды-pow). Узел HitStars — в main.tscn.
-		var stars := get_node_or_null("HitStars") as HitStars
-		if stars != null:
-			weapons.damageable_hit.connect(stars.spawn)
-	else:
-		# Фолбэк, если менеджера нет.
-		_sync_ammo_type(&"bullets")
+	if weapons == null:
+		_sync_ammo_type(&"bullets")  # фолбэк, если менеджера нет
+		return
+
+	weapons.weapon_changed.connect(_on_weapon_changed)
+	_on_weapon_changed(weapons.get_active_weapon())  # стартовая синхронизация
+	_setup_effects(weapons)
+
+
+# Подключаем эффекты попадания к сигналам стволов. Узлы ImpactSmoke/HitStars —
+# в main.tscn; signal up: weapon → WeaponManager → сюда → эффект.
+func _setup_effects(weapons: WeaponManager) -> void:
+	# Дымок по неуязвимой поверхности.
+	var impacts := get_node_or_null("ImpactSmoke") as ImpactSmoke
+	if impacts != null:
+		weapons.surface_hit.connect(impacts.spawn)
+	# Звёзды-pow по врагу.
+	var stars := get_node_or_null("HitStars") as HitStars
+	if stars != null:
+		weapons.damageable_hit.connect(stars.spawn)
 
 
 # Сменилось активное оружие: показываем на HUD патроны его типа.

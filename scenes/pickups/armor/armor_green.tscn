@@ -1,6 +1,6 @@
 [gd_scene format=3 uid="uid://coa10rr4av5rr"]
 
-[ext_resource type="PackedScene" uid="uid://vix5ymbwwquo" path="res://scenes/pickups/armor_pickup.tscn" id="1_1vy3h"]
+[ext_resource type="PackedScene" uid="uid://vix5ymbwwquo" path="res://scenes/pickups/armor/armor_pickup.tscn" id="1_1vy3h"]
 
 [sub_resource type="BoxMesh" id="BoxMesh_vl8h8"]
 size = Vector3(0.6, 0.6, 0.6)

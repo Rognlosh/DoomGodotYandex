@@ -1,12 +1,15 @@
+@tool
 class_name DirectionalSprite3D
 extends Sprite3D
 ## Спрайт врага с думовскими ракурсами + покадровой анимацией.
-## Висит прямо на узле Sprite3D (биллборд Y). Каждый кадр:
+## Висит прямо на узле Sprite3D (биллборд Y). Каждый кадр (в игре):
 ##   1) считает угол между «куда смотрит враг» (поворот родителя) и камерой,
 ##   2) выбирает столбец-ракурс атласа (+ flip_h для левой половины круга),
 ##   3) листает кадры текущей анимации по таймеру.
 ## Реюзабелен: любой враг вешает этот же скрипт на свой Sprite3D и заполняет
 ## массив animations своим атласом — кода под нового врага не пишем.
+## @tool: в редакторе НЕ анимируется, а показывает один статичный idle-кадр
+## (иначе Sprite3D рисует весь атлас сеткой — нарезка ставится только в рантайме).
 
 ## Текущая анимация доиграла (для невозвратных — атака/смерть).
 signal animation_finished(anim_name: StringName)
@@ -14,10 +17,16 @@ signal animation_finished(anim_name: StringName)
 @export_group("Атлас")
 ## Сколько РИСУЕМЫХ ракурсов-столбцов: думовские 5 (фронт, фронт-¾, профиль,
 ## спина-¾, спина). Левая половина круга — зеркало, в атласе её нет.
-@export var columns: int = 5
+@export var columns: int = 5:
+	set(value):
+		columns = value
+		_refresh_editor_preview()
 ## Набор анимаций (см. SpriteAnimation). Заполняется в инспекторе.
-@export var animations: Array[SpriteAnimation] = []
-## Что играть при старте.
+@export var animations: Array[SpriteAnimation] = []:
+	set(value):
+		animations = value
+		_refresh_editor_preview()
+## Что играть при старте (в игре).
 @export var default_animation: StringName = &"walk"
 
 @export_group("Боль")
@@ -25,6 +34,14 @@ signal animation_finished(anim_name: StringName)
 @export var pain_animation: StringName = &"pain"
 ## Сколько секунд держится кадр боли, прежде чем вернуться к прежней анимации.
 @export var pain_hold: float = 0.25
+
+@export_group("Редактор")
+## Какую анимацию показывать статичным превью в редакторе (берётся фронт-ракурс,
+## столбец 0, первый кадр). Пусто — используется default_animation.
+@export var editor_preview_animation: StringName = &"":
+	set(value):
+		editor_preview_animation = value
+		_refresh_editor_preview()
 
 var _by_name: Dictionary = {}
 var _current: SpriteAnimation     # что показываем сейчас
@@ -39,11 +56,14 @@ var _enabled: bool = false
 
 
 func _ready() -> void:
-	# Нет атласа или анимаций — работаем простым статичным плейсхолдером,
-	# чтобы игра оставалась играбельной до появления арта.
+	# Нет атласа или анимаций — статичный плейсхолдер (один спрайт).
+	# Плейсхолдер генерим только в игре, чтобы не запекать его в сцену из редактора.
 	if texture == null or animations.is_empty():
-		if texture == null:
+		if texture == null and not Engine.is_editor_hint():
 			texture = _make_placeholder_texture()
+		hframes = 1
+		vframes = 1
+		frame = 0
 		_enabled = false
 		return
 
@@ -51,12 +71,23 @@ func _ready() -> void:
 	hframes = columns
 	vframes = _compute_total_rows()
 	for a in animations:
-		_by_name[a.name] = a
+		if a != null:
+			_by_name[a.name] = a
+
+	# В редакторе анимацию НЕ запускаем — показываем один статичный idle-кадр.
+	if Engine.is_editor_hint():
+		_show_editor_preview()
+		_enabled = false
+		return
+
 	_enabled = true
 	play(default_animation)
 
 
 func _process(delta: float) -> void:
+	# В редакторе покадровая/ракурсная логика не нужна (нет игровой камеры) — превью статично.
+	if Engine.is_editor_hint():
+		return
 	if not _enabled or _current == null:
 		return
 	if _pain_timer > 0.0:
@@ -165,8 +196,40 @@ func _pick_direction() -> Vector2i:
 func _compute_total_rows() -> int:
 	var rows: int = 1
 	for a in animations:
-		rows = maxi(rows, a.row_start + a.frame_count)
+		if a != null:
+			rows = maxi(rows, a.row_start + a.frame_count)
 	return rows
+
+
+# --- Редактор: статичное превью одного idle-кадра ---
+
+# Пересобрать превью при правке атласа/анимаций в инспекторе.
+func _refresh_editor_preview() -> void:
+	if not Engine.is_editor_hint() or not is_node_ready():
+		return
+	if texture == null or animations.is_empty():
+		return
+	hframes = columns
+	vframes = _compute_total_rows()
+	_by_name.clear()
+	for a in animations:
+		if a != null:
+			_by_name[a.name] = a
+	_show_editor_preview()
+
+
+# Показать один кадр: фронт-ракурс (столбец 0), первый кадр выбранной анимации.
+func _show_editor_preview() -> void:
+	var preview := editor_preview_animation
+	if preview == &"" or not _by_name.has(preview):
+		preview = default_animation
+	var a: SpriteAnimation = _by_name.get(preview)
+	if a == null and not animations.is_empty():
+		a = animations[0]
+	if a == null:
+		return
+	flip_h = false
+	frame = a.row_start * columns  # столбец 0, первый кадр
 
 
 ## Временный силуэт, пока нет атласа (ноль веса билда). Появится текстура —

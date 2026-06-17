@@ -3,11 +3,11 @@
 [ext_resource type="Script" uid="uid://cco4cbmdmmdq0" path="res://scenes/player/player.gd" id="1_8afob"]
 [ext_resource type="Script" uid="uid://bkwpd6vnsn8hq" path="res://scenes/player/weapon.gd" id="2_dovo2"]
 [ext_resource type="Script" uid="uid://c7h43hs6k0eox" path="res://scenes/player/weapon_manager.gd" id="3_0owmy"]
-[ext_resource type="Script" uid="uid://bp5jo1rxsxdxc" path="res://scenes/ui/crosshair.gd" id="3_gmlin"]
-[ext_resource type="Script" uid="uid://3xtjeljrqxo1" path="res://scripts/health_component.gd" id="4_lvxji"]
-[ext_resource type="Script" uid="uid://fe6xb17afane" path="res://scripts/ammo_component.gd" id="5_75vfm"]
-[ext_resource type="Script" uid="uid://bguw54o77pkla" path="res://scripts/ammo_type.gd" id="6_0owmy"]
-[ext_resource type="Script" uid="uid://cjjdm5ul7gm17" path="res://scripts/armor_component.gd" id="8_qek5x"]
+[ext_resource type="Script" uid="uid://bp5jo1rxsxdxc" path="res://scripts/ui/crosshair.gd" id="3_gmlin"]
+[ext_resource type="Script" uid="uid://3xtjeljrqxo1" path="res://scripts/components/health_component.gd" id="4_lvxji"]
+[ext_resource type="Script" uid="uid://fe6xb17afane" path="res://scripts/components/ammo_component.gd" id="5_75vfm"]
+[ext_resource type="Script" uid="uid://bguw54o77pkla" path="res://scripts/resources/ammo_type.gd" id="6_0owmy"]
+[ext_resource type="Script" uid="uid://cjjdm5ul7gm17" path="res://scripts/components/armor_component.gd" id="8_qek5x"]
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_dovo2"]
 radius = 0.4

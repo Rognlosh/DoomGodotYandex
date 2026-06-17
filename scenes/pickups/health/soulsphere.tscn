@@ -1,6 +1,6 @@
 [gd_scene format=3 uid="uid://duindq6qmt6x8"]
 
-[ext_resource type="PackedScene" uid="uid://cxhi7nu45a6fs" path="res://scenes/pickups/health_pickup.tscn" id="1_romr6"]
+[ext_resource type="PackedScene" uid="uid://cxhi7nu45a6fs" path="res://scenes/pickups/health/health_pickup.tscn" id="1_romr6"]
 
 [sub_resource type="SphereMesh" id="SphereMesh_pxs7h"]
 radius = 0.4

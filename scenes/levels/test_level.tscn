@@ -1,7 +1,7 @@
 [gd_scene format=3 uid="uid://ppwfb1508l0s"]
 
 [ext_resource type="PackedScene" uid="uid://djyxa4b1xgyjk" path="res://scenes/enemies/melee_grunt.tscn" id="1_jbqir"]
-[ext_resource type="PackedScene" uid="uid://capg6k5fgvtti" path="res://scenes/pickups/ammo_pickup.tscn" id="2_yautc"]
+[ext_resource type="PackedScene" uid="uid://capg6k5fgvtti" path="res://scenes/pickups/ammo/ammo_pickup.tscn" id="2_yautc"]
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_3hp5k"]
 albedo_color = Color(0.16274172, 0.12389998, 0.59, 1)
