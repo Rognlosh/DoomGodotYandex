@@ -81,6 +81,10 @@ func _setup_ammo(player: Node3D) -> void:
 		var impacts := get_node_or_null("ImpactSmoke") as ImpactSmoke
 		if impacts != null:
 			weapons.surface_hit.connect(impacts.spawn)
+		# Эффект попадания по врагу (звёзды-pow). Узел HitStars — в main.tscn.
+		var stars := get_node_or_null("HitStars") as HitStars
+		if stars != null:
+			weapons.damageable_hit.connect(stars.spawn)
 	else:
 		# Фолбэк, если менеджера нет.
 		_sync_ammo_type(&"bullets")

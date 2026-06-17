@@ -34,10 +34,20 @@ loop = false
 directional = false
 metadata/_custom_type_script = "uid://bsh1anim2type"
 
+[sub_resource type="Resource" id="Resource_pain"]
+script = ExtResource("3_anim0")
+name = &"pain"
+row_start = 10
+frame_count = 1
+fps = 8.0
+loop = false
+directional = true
+metadata/_custom_type_script = "uid://bsh1anim2type"
+
 [node name="Enemy" unique_id=360318765 instance=ExtResource("1_gjxx1")]
 
 [node name="Sprite3D" parent="." index="1" unique_id=913123013]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.95, 0)
 pixel_size = 0.028
 texture = ExtResource("2_tral0")
-animations = Array[ExtResource("3_anim0")]([SubResource("Resource_walk"), SubResource("Resource_atk"), SubResource("Resource_death")])
+animations = Array[ExtResource("3_anim0")]([SubResource("Resource_walk"), SubResource("Resource_atk"), SubResource("Resource_death"), SubResource("Resource_pain")])

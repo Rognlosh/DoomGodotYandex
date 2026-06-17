@@ -11,6 +11,9 @@ signal weapon_changed(weapon: Weapon)
 ## Проброс попадания по поверхности от стволов наверх (для эффекта дымка).
 signal surface_hit(position: Vector3, normal: Vector3)
 
+## Проброс попадания по врагу от стволов наверх (для эффекта звёзд).
+signal damageable_hit(position: Vector3, normal: Vector3)
+
 ## С какого слота начинаем. Пуст — берём первый занятый по возрастанию.
 @export var start_slot: int = 2
 
@@ -33,6 +36,7 @@ func _ready() -> void:
 		_by_slot[weapon.slot] = weapon
 		weapon.visible = false
 		weapon.surface_hit.connect(_forward_surface_hit)
+		weapon.damageable_hit.connect(_forward_damageable_hit)
 	_ordered_slots.assign(_by_slot.keys())
 	_ordered_slots.sort()
 
@@ -118,3 +122,7 @@ func _cycle(direction: int) -> void:
 	
 func _forward_surface_hit(position: Vector3, normal: Vector3) -> void:
 	surface_hit.emit(position, normal)
+
+
+func _forward_damageable_hit(position: Vector3, normal: Vector3) -> void:
+	damageable_hit.emit(position, normal)
