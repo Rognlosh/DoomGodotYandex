@@ -12,5 +12,8 @@ script = ExtResource("2_op5pu")
 heal_amount = 25.0
 allow_overheal = false
 
+[node name="CollisionShape3D" parent="." index="0" unique_id=1166977037]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.5, 0)
+
 [node name="MeshInstance3D" parent="." index="1" unique_id=32778721]
 surface_material_override/0 = SubResource("StandardMaterial3D_s0h3m")

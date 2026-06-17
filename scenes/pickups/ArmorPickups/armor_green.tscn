@@ -1,0 +1,16 @@
+[gd_scene format=3 uid="uid://coa10rr4av5rr"]
+
+[ext_resource type="PackedScene" uid="uid://vix5ymbwwquo" path="res://scenes/pickups/armor_pickup.tscn" id="1_1vy3h"]
+
+[sub_resource type="BoxMesh" id="BoxMesh_vl8h8"]
+size = Vector3(0.6, 0.6, 0.6)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_dc6n7"]
+shading_mode = 0
+albedo_color = Color(4.813075e-07, 0.7766051, 0.41576427, 1)
+
+[node name="Pickup" unique_id=1531948811 instance=ExtResource("1_1vy3h")]
+
+[node name="MeshInstance3D" parent="." index="1" unique_id=32778721]
+mesh = SubResource("BoxMesh_vl8h8")
+surface_material_override/0 = SubResource("StandardMaterial3D_dc6n7")

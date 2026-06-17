@@ -1,0 +1,14 @@
+[gd_scene format=3 uid="uid://dxpb546mp7lek"]
+
+[ext_resource type="PackedScene" uid="uid://vix5ymbwwquo" path="res://scenes/pickups/armor_pickup.tscn" id="1_nq27h"]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_ehnw8"]
+shading_mode = 0
+albedo_color = Color(0.6142, 0.74008334, 0.83, 1)
+
+[node name="Pickup" unique_id=1531948811 instance=ExtResource("1_nq27h")]
+mode = 0
+amount = 1.0
+
+[node name="MeshInstance3D" parent="." index="1" unique_id=32778721]
+surface_material_override/0 = SubResource("StandardMaterial3D_ehnw8")
