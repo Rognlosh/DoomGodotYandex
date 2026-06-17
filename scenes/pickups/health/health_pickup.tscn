@@ -1,7 +1,7 @@
 [gd_scene format=3 uid="uid://cxhi7nu45a6fs"]
 
 [ext_resource type="PackedScene" uid="uid://ddtpb73e3c5ws" path="res://scenes/pickups/pickup_base.tscn" id="1_miu4l"]
-[ext_resource type="Script" uid="uid://0tixkhkoa14y" path="res://scenes/pickups/health_pickup.gd" id="2_op5pu"]
+[ext_resource type="Script" uid="uid://0tixkhkoa14y" path="res://scenes/pickups/health/health_pickup.gd" id="2_op5pu"]
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_s0h3m"]
 shading_mode = 0

@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://dtralalero7sh"
-path="res://.godot/imported/enemy_tralalero.png-9870aed5107a167e13f9c61553bbecf6.ctex"
+uid="uid://drru34kd00gct"
+path="res://.godot/imported/semi_gun.png-2c22b2972a1355e1c5f899bda75ddba1.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://sprites/enemy_tralalero.png"
-dest_files=["res://.godot/imported/enemy_tralalero.png-9870aed5107a167e13f9c61553bbecf6.ctex"]
+source_file="res://assets/sprites/semi_gun.png"
+dest_files=["res://.godot/imported/semi_gun.png-2c22b2972a1355e1c5f899bda75ddba1.ctex"]
 
 [params]
 
@@ -37,4 +37,4 @@ process/normal_map_invert_y=false
 process/hdr_as_srgb=false
 process/hdr_clamp_exposure=false
 process/size_limit=0
-detect_3d/compress_to=0
+detect_3d/compress_to=1

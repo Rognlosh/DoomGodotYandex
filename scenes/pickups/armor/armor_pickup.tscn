@@ -1,7 +1,7 @@
 [gd_scene format=3 uid="uid://vix5ymbwwquo"]
 
 [ext_resource type="PackedScene" uid="uid://ddtpb73e3c5ws" path="res://scenes/pickups/pickup_base.tscn" id="1_b0qa0"]
-[ext_resource type="Script" uid="uid://bxqsx0q8kxrqb" path="res://scenes/pickups/armor_pickup.gd" id="2_ex6xb"]
+[ext_resource type="Script" uid="uid://bxqsx0q8kxrqb" path="res://scenes/pickups/armor/armor_pickup.gd" id="2_ex6xb"]
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_twq8t"]
 shading_mode = 0

@@ -4,8 +4,8 @@
 [ext_resource type="PackedScene" uid="uid://ppwfb1508l0s" path="res://scenes/levels/test_level.tscn" id="2_l3cfh"]
 [ext_resource type="PackedScene" uid="uid://dq8ho3pvydr6o" path="res://scenes/player/player.tscn" id="3_6q06x"]
 [ext_resource type="PackedScene" uid="uid://bmcwnnt85t56w" path="res://scenes/ui/hud.tscn" id="4_l3cfh"]
-[ext_resource type="Script" uid="uid://cirspvw4t2yde" path="res://scripts/impact_smoke.gd" id="5_6q06x"]
-[ext_resource type="Script" uid="uid://chitstars0pow" path="res://scripts/hit_stars.gd" id="6_stars"]
+[ext_resource type="Script" uid="uid://cirspvw4t2yde" path="res://scripts/effects/impact_smoke.gd" id="5_6q06x"]
+[ext_resource type="Script" uid="uid://chitstars0pow" path="res://scripts/effects/hit_stars.gd" id="6_stars"]
 
 [node name="Main" type="Node3D" unique_id=505731654]
 script = ExtResource("1_k2fmo")

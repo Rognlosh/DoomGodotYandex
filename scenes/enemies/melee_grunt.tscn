@@ -1,8 +1,8 @@
 [gd_scene format=3 uid="uid://djyxa4b1xgyjk"]
 
 [ext_resource type="PackedScene" uid="uid://1hb3ai71rj5u" path="res://scenes/enemies/enemy_base.tscn" id="1_gjxx1"]
-[ext_resource type="Texture2D" uid="uid://dtralalero7sh" path="res://sprites/enemy_tralalero.png" id="2_tral0"]
-[ext_resource type="Script" uid="uid://bsh1anim2type" path="res://scripts/sprite_animation.gd" id="3_anim0"]
+[ext_resource type="Texture2D" uid="uid://dtralalero7sh" path="res://assets/sprites/enemy_tralalero.png" id="2_tral0"]
+[ext_resource type="Script" uid="uid://bsh1anim2type" path="res://scripts/resources/sprite_animation.gd" id="3_anim0"]
 
 [sub_resource type="Resource" id="Resource_walk"]
 script = ExtResource("3_anim0")

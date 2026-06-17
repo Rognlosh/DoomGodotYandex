@@ -1,0 +1,5 @@
+[gd_scene format=3 uid="uid://buc6jw652cenw"]
+
+[ext_resource type="PackedScene" uid="uid://cxhi7nu45a6fs" path="res://scenes/pickups/health/health_pickup.tscn" id="1_tk34s"]
+
+[node name="Pickup" unique_id=1531948811 instance=ExtResource("1_tk34s")]

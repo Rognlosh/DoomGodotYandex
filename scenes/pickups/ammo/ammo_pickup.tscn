@@ -1,7 +1,7 @@
 [gd_scene format=3 uid="uid://capg6k5fgvtti"]
 
 [ext_resource type="PackedScene" uid="uid://ddtpb73e3c5ws" path="res://scenes/pickups/pickup_base.tscn" id="1_lty2n"]
-[ext_resource type="Script" uid="uid://dlhpvyrwon8vj" path="res://scenes/pickups/ammo_pickup.gd" id="2_r5ix3"]
+[ext_resource type="Script" uid="uid://dlhpvyrwon8vj" path="res://scenes/pickups/ammo/ammo_pickup.gd" id="2_r5ix3"]
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_jgu5d"]
 albedo_color = Color(0.52, 0.19291998, 0.1352, 1)
