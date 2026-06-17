@@ -7,6 +7,10 @@ extends Control
 ## Ввод оружие само НЕ читает — им управляет WeaponManager (роутит выстрел в активный
 ## ствол и переключает оружие).
 
+## Луч попал в неуязвимую поверхность (стена/пол, не враг). (position, normal) —
+## для эффекта попадания. Подписчик (через WeaponManager → main) играет дымок.
+signal surface_hit(position: Vector3, normal: Vector3)
+
 ## Режим огня. SEMI — выстрел на нажатие; AUTO — очередь, пока зажата кнопка.
 enum FireMode { SEMI, AUTO }
 
@@ -137,6 +141,9 @@ func _fire() -> void:
 		var collider: Object = result.get("collider")
 		if collider != null and collider.has_method("take_damage"):
 			collider.take_damage(damage)  # урон за каждую попавшую дробину
+		else:
+			# Неуязвимая поверхность — эффект дымка по нормали (по врагам не ставим).
+			surface_hit.emit(result.get("position"), result.get("normal"))
 
 
 func _show_effects() -> void:

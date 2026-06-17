@@ -8,6 +8,9 @@ extends Node
 ## Сменилось активное оружие. (weapon) — для HUD (показать его патроны).
 signal weapon_changed(weapon: Weapon)
 
+## Проброс попадания по поверхности от стволов наверх (для эффекта дымка).
+signal surface_hit(position: Vector3, normal: Vector3)
+
 ## С какого слота начинаем. Пуст — берём первый занятый по возрастанию.
 @export var start_slot: int = 2
 
@@ -29,6 +32,7 @@ func _ready() -> void:
 			continue
 		_by_slot[weapon.slot] = weapon
 		weapon.visible = false
+		weapon.surface_hit.connect(_forward_surface_hit)
 	_ordered_slots.assign(_by_slot.keys())
 	_ordered_slots.sort()
 
@@ -111,3 +115,6 @@ func _cycle(direction: int) -> void:
 		idx = 0
 	idx = wrapi(idx + direction, 0, _ordered_slots.size())
 	_activate(_ordered_slots[idx])
+	
+func _forward_surface_hit(position: Vector3, normal: Vector3) -> void:
+	surface_hit.emit(position, normal)

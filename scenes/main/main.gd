@@ -77,6 +77,10 @@ func _setup_ammo(player: Node3D) -> void:
 	if weapons != null:
 		weapons.weapon_changed.connect(_on_weapon_changed)
 		_on_weapon_changed(weapons.get_active_weapon())  # стартовая синхронизация
+		# Эффект попадания по поверхности (дымок). Узел ImpactSmoke — в main.tscn.
+		var impacts := get_node_or_null("ImpactSmoke") as ImpactSmoke
+		if impacts != null:
+			weapons.surface_hit.connect(impacts.spawn)
 	else:
 		# Фолбэк, если менеджера нет.
 		_sync_ammo_type(&"bullets")
