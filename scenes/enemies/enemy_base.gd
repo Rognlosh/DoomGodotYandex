@@ -28,7 +28,7 @@ const _EYE_OFFSET := Vector3(0.0, 1.0, 0.0)
 
 func _ready() -> void:
 	_health.died.connect(_on_death)
-	# Вспышка боли при уроне (но не на добивающем — там играет смерть).
+	# Спрайт боли при уроне (но не на добивающем — там играет смерть).
 	_health.health_changed.connect(_on_health_changed)
 
 
@@ -122,16 +122,16 @@ func _on_death() -> void:
 	velocity = Vector3.ZERO
 	set_deferred(&"collision_layer", 0)
 	set_deferred(&"collision_mask", 0)
-	_sprite.play(&"death")
+	_sprite.play(&"death", true)  # force — перебить возможную боль
 	get_tree().create_timer(2.0).timeout.connect(queue_free)
 
 
 # --- Вспомогательное ---
 
 func _on_health_changed(current: float, _maximum: float) -> void:
-	# Жив после удара — вспышка. Ноль (добили) — пропуск, играет смерть.
+	# Жив после удара — кадр боли. Ноль (добили) — пропуск, играет смерть.
 	if current > 0.0:
-		_sprite.flash_pain()
+		_sprite.hurt()
 
 
 ## Повернуть тело по горизонтали в сторону d (его -Z станет смотреть туда).

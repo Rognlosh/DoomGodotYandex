@@ -20,17 +20,19 @@ signal animation_finished(anim_name: StringName)
 ## Что играть при старте.
 @export var default_animation: StringName = &"walk"
 
-@export_group("Вспышка боли")
-## Цвет короткой вспышки при получении урона.
-@export var pain_color: Color = Color(1.0, 0.4, 0.4)
-## Длительность затухания вспышки, с.
-@export var pain_duration: float = 0.12
+@export_group("Боль")
+## Имя анимации боли (флинч на получение урона).
+@export var pain_animation: StringName = &"pain"
+## Сколько секунд держится кадр боли, прежде чем вернуться к прежней анимации.
+@export var pain_hold: float = 0.25
 
 var _by_name: Dictionary = {}
-var _current: SpriteAnimation
+var _current: SpriteAnimation     # что показываем сейчас
+var _desired: SpriteAnimation     # к чему вернуться после боли (ambient-состояние)
 var _frame_index: int = 0
 var _accum: float = 0.0
 var _finished_emitted: bool = false
+var _pain_timer: float = 0.0      # >0 — играем боль, обычные play() её не перебивают
 var _enabled: bool = false
 # Узел, чей поворот считаем «направлением взгляда» врага (тело-родитель).
 @onready var _body: Node3D = get_parent() as Node3D
@@ -57,30 +59,50 @@ func _ready() -> void:
 func _process(delta: float) -> void:
 	if not _enabled or _current == null:
 		return
+	if _pain_timer > 0.0:
+		_pain_timer -= delta
+		if _pain_timer <= 0.0 and _desired != null:
+			_switch_to(_desired)  # боль кончилась — вернуться к прежней анимации
 	_advance_frame(delta)
 	_update_cell()
 
 
-## Переключить анимацию. Зацикленную ту же не перезапускаем (чтобы ходьба
-## не дёргалась от вызова каждый кадр); невозвратную (атака/смерть) — да.
-func play(anim_name: StringName) -> void:
+## Переключить ambient-анимацию (ходьба/атака). Во время боли только запоминаем
+## желаемое — на экране держится боль. force=true перебивает боль (смерть).
+func play(anim_name: StringName, force: bool = false) -> void:
 	var a: SpriteAnimation = _by_name.get(anim_name)
 	if a == null:
 		return
+	_desired = a
+	if _pain_timer > 0.0 and not force:
+		return
+	if force:
+		_pain_timer = 0.0
+	_switch_to(a)
+
+
+## Сыграть кадр боли на pain_hold секунд (перебивает текущее, кроме смерти —
+## смерть зовётся через play(..., force=true) и сама обнуляет боль).
+func hurt() -> void:
+	var p: SpriteAnimation = _by_name.get(pain_animation)
+	if p == null:
+		return
+	_pain_timer = pain_hold
+	_set_anim(p)  # принудительно, даже если уже боль (повторный удар — заново)
+
+
+# Переключение без перезапуска той же зацикленной (чтобы ходьба не дёргалась).
+func _switch_to(a: SpriteAnimation) -> void:
 	if a == _current and a.loop:
 		return
+	_set_anim(a)
+
+
+func _set_anim(a: SpriteAnimation) -> void:
 	_current = a
 	_frame_index = 0
 	_accum = 0.0
 	_finished_emitted = false
-
-
-## Короткая вспышка цвета поверх кадра (реакция на урон). Кадры не трогает.
-func flash_pain() -> void:
-	modulate = pain_color
-	# create_tween — одноразовый твин: плавно гоним modulate обратно в белый.
-	var tw: Tween = create_tween()
-	tw.tween_property(self, ^"modulate", Color.WHITE, pain_duration)
 
 
 # --- Внутреннее ---

@@ -11,6 +11,10 @@ extends Control
 ## для эффекта попадания. Подписчик (через WeaponManager → main) играет дымок.
 signal surface_hit(position: Vector3, normal: Vector3)
 
+## Луч попал по уязвимой цели (враг). (position, normal) — для эффекта попадания
+## по врагу (звёзды-pow). Подписчик (через WeaponManager → main) играет эффект.
+signal damageable_hit(position: Vector3, normal: Vector3)
+
 ## Режим огня. SEMI — выстрел на нажатие; AUTO — очередь, пока зажата кнопка.
 enum FireMode { SEMI, AUTO }
 
@@ -141,6 +145,7 @@ func _fire() -> void:
 		var collider: Object = result.get("collider")
 		if collider != null and collider.has_method("take_damage"):
 			collider.take_damage(damage)  # урон за каждую попавшую дробину
+			damageable_hit.emit(result.get("position"), result.get("normal"))
 		else:
 			# Неуязвимая поверхность — эффект дымка по нормали (по врагам не ставим).
 			surface_hit.emit(result.get("position"), result.get("normal"))
