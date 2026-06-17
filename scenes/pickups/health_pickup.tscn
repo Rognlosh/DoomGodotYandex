@@ -1,0 +1,19 @@
+[gd_scene format=3 uid="uid://cxhi7nu45a6fs"]
+
+[ext_resource type="PackedScene" uid="uid://ddtpb73e3c5ws" path="res://scenes/pickups/pickup_base.tscn" id="1_miu4l"]
+[ext_resource type="Script" uid="uid://0tixkhkoa14y" path="res://scenes/pickups/health_pickup.gd" id="2_op5pu"]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_s0h3m"]
+shading_mode = 0
+albedo_color = Color(0.36524424, 0.84532934, 0, 1)
+
+[node name="Pickup" unique_id=1531948811 instance=ExtResource("1_miu4l")]
+script = ExtResource("2_op5pu")
+heal_amount = 25.0
+allow_overheal = false
+
+[node name="CollisionShape3D" parent="." index="0" unique_id=1166977037]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.5, 0)
+
+[node name="MeshInstance3D" parent="." index="1" unique_id=32778721]
+surface_material_override/0 = SubResource("StandardMaterial3D_s0h3m")

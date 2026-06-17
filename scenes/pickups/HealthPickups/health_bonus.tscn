@@ -1,0 +1,18 @@
+[gd_scene format=3 uid="uid://dpfhdqm4gwl3i"]
+
+[ext_resource type="PackedScene" uid="uid://cxhi7nu45a6fs" path="res://scenes/pickups/health_pickup.tscn" id="1_kixow"]
+
+[sub_resource type="BoxMesh" id="BoxMesh_cpgax"]
+size = Vector3(0.3, 0.3, 0.3)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_ogknn"]
+shading_mode = 0
+albedo_color = Color(0.27539998, 0.81, 0.45360005, 1)
+
+[node name="Pickup" unique_id=1531948811 instance=ExtResource("1_kixow")]
+heal_amount = 1.0
+allow_overheal = true
+
+[node name="MeshInstance3D" parent="." index="1" unique_id=32778721]
+mesh = SubResource("BoxMesh_cpgax")
+surface_material_override/0 = SubResource("StandardMaterial3D_ogknn")

@@ -1,0 +1,17 @@
+[gd_scene format=3 uid="uid://vix5ymbwwquo"]
+
+[ext_resource type="PackedScene" uid="uid://ddtpb73e3c5ws" path="res://scenes/pickups/pickup_base.tscn" id="1_b0qa0"]
+[ext_resource type="Script" uid="uid://bxqsx0q8kxrqb" path="res://scenes/pickups/armor_pickup.gd" id="2_ex6xb"]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_twq8t"]
+shading_mode = 0
+albedo_color = Color(0.24735427, 0.6830451, 0.99999994, 1)
+
+[node name="Pickup" unique_id=1531948811 instance=ExtResource("1_b0qa0")]
+script = ExtResource("2_ex6xb")
+mode = 1
+amount = 100.0
+armor_class = 1
+
+[node name="MeshInstance3D" parent="." index="1" unique_id=32778721]
+surface_material_override/0 = SubResource("StandardMaterial3D_twq8t")

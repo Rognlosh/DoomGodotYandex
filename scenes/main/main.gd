@@ -58,6 +58,12 @@ func _setup_hud(player: Node3D) -> void:
 	health.died.connect(_on_player_died)
 	# Компонент шлёт health_changed только при изменении — стартовое значение пушим вручную.
 	_hud.set_health(health.current_health, health.max_health)
+	
+	# Броня игрока — отдельный компонент перед HP (если есть). signal up, как со здоровьем.
+	var armor := player.get_node_or_null("ArmorComponent") as ArmorComponent
+	if armor != null:
+		armor.armor_changed.connect(_hud.set_armor)
+		_hud.set_armor(armor.current_armor, armor.max_armor)
 
 	_setup_ammo(player)
 

@@ -7,6 +7,7 @@
 [ext_resource type="Script" uid="uid://3xtjeljrqxo1" path="res://scripts/health_component.gd" id="4_lvxji"]
 [ext_resource type="Script" uid="uid://fe6xb17afane" path="res://scripts/ammo_component.gd" id="5_75vfm"]
 [ext_resource type="Script" uid="uid://bguw54o77pkla" path="res://scripts/ammo_type.gd" id="6_0owmy"]
+[ext_resource type="Script" uid="uid://cjjdm5ul7gm17" path="res://scripts/armor_component.gd" id="8_qek5x"]
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_dovo2"]
 radius = 0.4
@@ -95,7 +96,12 @@ barrel_size = Vector2(22, 90)
 [node name="HealthComponent" type="Node" parent="." unique_id=1053890916]
 script = ExtResource("4_lvxji")
 max_health = 100.0
+overheal_max = 200.0
+overheal_decay = 1.0
 
 [node name="AmmoComponent" type="Node" parent="." unique_id=1004497769]
 script = ExtResource("5_75vfm")
 ammo_types = Array[ExtResource("6_0owmy")]([SubResource("Resource_qek5x"), SubResource("Resource_5gtgg")])
+
+[node name="ArmorComponent" type="Node" parent="." unique_id=1351681111]
+script = ExtResource("8_qek5x")
