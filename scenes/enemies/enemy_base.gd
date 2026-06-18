@@ -17,6 +17,10 @@ enum State { IDLE, CHASE, ATTACK, DEAD }
 @export_group("Цель")
 @export var target_group: StringName = &"player"
 
+@export_group("Смерть")
+## Через сколько секунд труп исчезает. 0 — остаётся навсегда (труп-декорация).
+@export var corpse_lifetime: float = 0.0
+
 @onready var _health: HealthComponent = $HealthComponent
 @onready var _sprite: DirectionalSprite3D = $Sprite3D
 
@@ -123,7 +127,9 @@ func _on_death() -> void:
 	set_deferred(&"collision_layer", 0)
 	set_deferred(&"collision_mask", 0)
 	_sprite.play(&"death", true)  # force — перебить возможную боль
-	get_tree().create_timer(2.0).timeout.connect(queue_free)
+	# Труп остаётся лежать; убираем, только если задан конечный срок жизни.
+	if corpse_lifetime > 0.0:
+		get_tree().create_timer(corpse_lifetime).timeout.connect(queue_free)
 
 
 # --- Вспомогательное ---

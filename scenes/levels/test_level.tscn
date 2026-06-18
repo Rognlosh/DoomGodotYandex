@@ -1,7 +1,9 @@
 [gd_scene format=3 uid="uid://ppwfb1508l0s"]
 
-[ext_resource type="PackedScene" uid="uid://djyxa4b1xgyjk" path="res://scenes/enemies/melee_grunt.tscn" id="1_jbqir"]
 [ext_resource type="PackedScene" uid="uid://capg6k5fgvtti" path="res://scenes/pickups/ammo/ammo_pickup.tscn" id="2_yautc"]
+[ext_resource type="PackedScene" uid="uid://brss1c0pylcw7" path="res://scenes/enemies/rusher.tscn" id="3_fr1um"]
+[ext_resource type="PackedScene" uid="uid://cp18osb6lofdo" path="res://scenes/enemies/shooter.tscn" id="4_48ne7"]
+[ext_resource type="PackedScene" uid="uid://bgwuea57qy16a" path="res://scenes/enemies/flyer.tscn" id="5_6xh4u"]
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_3hp5k"]
 albedo_color = Color(0.16274172, 0.12389998, 0.59, 1)
@@ -38,9 +40,6 @@ transform = Transform3D(1, 0, 0, 0, 0.64278764, 0.76604444, 0, -0.76604444, 0.64
 [node name="PlayerSpawn" type="Marker3D" parent="." unique_id=1866508379]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.2, 4)
 
-[node name="Enemy" parent="." unique_id=360318765 instance=ExtResource("1_jbqir")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5.0556183, 0.2, -6)
-
 [node name="Pickup" parent="." unique_id=1531948811 instance=ExtResource("2_yautc")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 7.146073, 0, 0.31606698)
 
@@ -49,3 +48,18 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -4.7057643, 0, -2.6470685)
 
 [node name="Pickup3" parent="." unique_id=2037795098 instance=ExtResource("2_yautc")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4.5449023, 0, 1.6964359)
+
+[node name="Enemy2" parent="." unique_id=260199238 instance=ExtResource("3_fr1um")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -12, 0, -7)
+
+[node name="Enemy3" parent="." unique_id=2057539141 instance=ExtResource("3_fr1um")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 11, 0, -8)
+
+[node name="Enemy4" parent="." unique_id=1941322988 instance=ExtResource("4_48ne7")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1, 0, -6)
+
+[node name="Enemy5" parent="." unique_id=978399247 instance=ExtResource("4_48ne7")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -9, 0, -9)
+
+[node name="Enemy6" parent="." unique_id=1701548116 instance=ExtResource("5_6xh4u")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 10, 5, -11)
