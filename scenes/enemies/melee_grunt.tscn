@@ -40,4 +40,6 @@ metadata/_custom_type_script = "uid://bsh1anim2type"
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.95, 0)
 pixel_size = 0.028
 texture = ExtResource("2_tral0")
+hframes = 5
+vframes = 11
 animations = Array[ExtResource("3_anim0")]([SubResource("Resource_walk"), SubResource("Resource_atk"), SubResource("Resource_death"), SubResource("Resource_pain")])

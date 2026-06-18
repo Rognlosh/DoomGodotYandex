@@ -1,0 +1,16 @@
+[gd_scene format=3 uid="uid://brss1c0pylcw7"]
+
+[ext_resource type="PackedScene" uid="uid://djyxa4b1xgyjk" path="res://scenes/enemies/melee_grunt.tscn" id="1_vc0ui"]
+
+[node name="Enemy" unique_id=360318765 instance=ExtResource("1_vc0ui")]
+move_speed = 8.0
+detection_range = 16.0
+attack_damage = 10.0
+attack_cooldown = 0.6
+
+[node name="Sprite3D" parent="." index="1" unique_id=913123013]
+modulate = Color(1.9499379, 0.7717736, 1.9982535, 1)
+pixel_size = 0.032
+
+[node name="HealthComponent" parent="." index="2" unique_id=67558913]
+max_health = 60.0

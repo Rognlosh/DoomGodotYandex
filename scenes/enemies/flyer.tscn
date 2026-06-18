@@ -1,0 +1,12 @@
+[gd_scene format=3 uid="uid://bgwuea57qy16a"]
+
+[ext_resource type="PackedScene" uid="uid://djyxa4b1xgyjk" path="res://scenes/enemies/melee_grunt.tscn" id="1_tg8yd"]
+[ext_resource type="Script" uid="uid://db25wob11qdpa" path="res://scenes/enemies/flyer.gd" id="2_7tqhk"]
+
+[node name="Enemy" unique_id=360318765 instance=ExtResource("1_tg8yd")]
+script = ExtResource("2_7tqhk")
+target_height_offset = 1.0
+hover_damp = 12.0
+move_speed = 5.0
+attack_range = 1.8
+attack_cooldown = 1.0
