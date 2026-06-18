@@ -1,6 +1,5 @@
 [gd_scene format=3 uid="uid://ppwfb1508l0s"]
 
-[ext_resource type="PackedScene" uid="uid://djyxa4b1xgyjk" path="res://scenes/enemies/melee_grunt.tscn" id="1_jbqir"]
 [ext_resource type="PackedScene" uid="uid://capg6k5fgvtti" path="res://scenes/pickups/ammo/ammo_pickup.tscn" id="2_yautc"]
 [ext_resource type="PackedScene" uid="uid://brss1c0pylcw7" path="res://scenes/enemies/rusher.tscn" id="3_fr1um"]
 [ext_resource type="PackedScene" uid="uid://cp18osb6lofdo" path="res://scenes/enemies/shooter.tscn" id="4_48ne7"]
@@ -40,9 +39,6 @@ transform = Transform3D(1, 0, 0, 0, 0.64278764, 0.76604444, 0, -0.76604444, 0.64
 
 [node name="PlayerSpawn" type="Marker3D" parent="." unique_id=1866508379]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.2, 4)
-
-[node name="Enemy" parent="." unique_id=360318765 instance=ExtResource("1_jbqir")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5.0556183, 0.2, -6)
 
 [node name="Pickup" parent="." unique_id=1531948811 instance=ExtResource("2_yautc")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 7.146073, 0, 0.31606698)
