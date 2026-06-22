@@ -27,6 +27,8 @@ enum State { IDLE, CHASE, ATTACK, DEAD }
 var _target: Node3D
 var _state: State = State.IDLE
 var _attack_timer: float = 0.0
+# Звук боя (находится по группе, лениво). null — звук не играет.
+var _combat: CombatAudio
 const _EYE_OFFSET := Vector3(0.0, 1.0, 0.0)
 
 
@@ -91,6 +93,7 @@ func _state_attack(delta: float) -> void:
 		return
 	if _attack_timer <= 0.0:
 		_attack_timer = attack_cooldown
+		_play_combat(&"enemy_attack")  # на месте вызова — звучит у любого типа
 		_perform_attack()
 
 
@@ -127,6 +130,7 @@ func _on_death() -> void:
 	set_deferred(&"collision_layer", 0)
 	set_deferred(&"collision_mask", 0)
 	_sprite.play(&"death", true)  # force — перебить возможную боль
+	_play_combat(&"enemy_death")
 	# Труп остаётся лежать; убираем, только если задан конечный срок жизни.
 	if corpse_lifetime > 0.0:
 		get_tree().create_timer(corpse_lifetime).timeout.connect(queue_free)
@@ -158,6 +162,14 @@ func _apply_gravity(delta: float) -> void:
 func _acquire_target() -> void:
 	if _target == null or not is_instance_valid(_target):
 		_target = get_tree().get_first_node_in_group(target_group) as Node3D
+
+
+# Ленивый поиск звука боя по группе (создаётся main). Кэшируем; нет — тишина.
+func _play_combat(id: StringName) -> void:
+	if _combat == null or not is_instance_valid(_combat):
+		_combat = get_tree().get_first_node_in_group(&"combat_audio") as CombatAudio
+	if _combat != null:
+		_combat.play(id)
 
 
 func _has_line_of_sight() -> bool:

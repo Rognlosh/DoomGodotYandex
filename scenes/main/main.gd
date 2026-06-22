@@ -13,12 +13,21 @@ extends Node3D
 var _hud: Hud
 # Боезапас игрока — для пуша актуального счётчика на HUD при смене оружия.
 var _ammo: AmmoComponent
+# Звук боя — создаём здесь, источники находят его по группе.
+var _combat: CombatAudio
+# Последнее здоровье игрока — чтобы отличить урон (звук боли) от лечения.
+var _player_health: float = 0.0
 
 
 func _ready() -> void:
 	if level_scene == null or player_scene == null:
 		push_error("Main: в инспекторе не назначены level_scene и/или player_scene.")
 		return
+
+	# Звук боя: узел в дереве, остальные находят его по группе "combat_audio".
+	# Создаём первым — стартует эмбиент и группа готова до спавна врагов/оружия.
+	_combat = CombatAudio.new()
+	add_child(_combat)
 
 	var level := level_scene.instantiate()
 	add_child(level)
@@ -55,9 +64,11 @@ func _setup_hud(player: Node3D) -> void:
 		push_error("Main: у игрока не найден HealthComponent.")
 		return
 	health.health_changed.connect(_hud.set_health)
+	health.health_changed.connect(_on_player_health_audio)
 	health.died.connect(_on_player_died)
 	# Компонент шлёт health_changed только при изменении — стартовое значение пушим вручную.
 	_hud.set_health(health.current_health, health.max_health)
+	_player_health = health.current_health
 
 	# Броня игрока — отдельный компонент перед HP (если есть). signal up, как со здоровьем.
 	var armor := player.get_node_or_null("ArmorComponent") as ArmorComponent
@@ -100,6 +111,19 @@ func _setup_effects(weapons: WeaponManager) -> void:
 	var stars := get_node_or_null("HitStars") as HitStars
 	if stars != null:
 		weapons.damageable_hit.connect(stars.spawn)
+	# Звук попаданий — рядом с эффектами (CombatAudio дедупит дробь по кадру).
+	weapons.surface_hit.connect(_on_surface_hit_audio)
+	weapons.damageable_hit.connect(_on_damageable_hit_audio)
+
+
+func _on_surface_hit_audio(_position: Vector3, _normal: Vector3) -> void:
+	if _combat != null:
+		_combat.play(&"impact_wall")
+
+
+func _on_damageable_hit_audio(_position: Vector3, _normal: Vector3) -> void:
+	if _combat != null:
+		_combat.play(&"impact_flesh")
 
 
 # Сменилось активное оружие: показываем на HUD патроны его типа.
@@ -117,9 +141,19 @@ func _sync_ammo_type(type: StringName) -> void:
 
 # Игрок умер: стоп всей игры, свободная мышь, оверлей. Рестарт — по клавише (сигнал от HUD).
 func _on_player_died() -> void:
+	if _combat != null:
+		_combat.play(&"player_death")
 	get_tree().paused = true
 	Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
 	_hud.show_game_over()
+
+
+# Звук боли — только когда здоровье упало (не на лечении пикапом) и игрок ещё жив
+# (на добивающем ударе звучит смерть через died).
+func _on_player_health_audio(current: float, _maximum: float) -> void:
+	if current < _player_health and current > 0.0 and _combat != null:
+		_combat.play(&"player_hurt")
+	_player_health = current
 
 
 func _on_restart_requested() -> void:

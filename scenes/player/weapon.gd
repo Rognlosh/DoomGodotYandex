@@ -47,10 +47,8 @@ enum FireMode { SEMI, AUTO }
 @export_group("Эффекты")
 ## Сколько секунд горит вспышка у дула.
 @export var flash_duration: float = 0.05
-## Звук выстрела (опционально). Молчит, пока ресурс не назначен.
-@export var shot_sound: AudioStream
-## Звук «пусто» при выстреле без патронов (опционально).
-@export var empty_sound: AudioStream
+# Звук выстрела/«пусто» — централизован в CombatAudio (по слоту ствола),
+# найдётся по группе. Реальные SFX — заменой OGG, не правкой сцен оружия.
 
 @export_group("Плейсхолдер-визуал")
 ## Размер «корпуса» ствола, px (заменим на спрайт-арт позже).
@@ -69,8 +67,8 @@ var _cooldown_timer: float = 0.0
 var _flash_timer: float = 0.0
 # Что исключаем из луча (тело игрока) — заполняется в _ready.
 var _exclude: Array[RID] = []
-# Плеер звука.
-var _audio: AudioStreamPlayer
+# Звук боя (находится по группе, лениво). null — звук просто не играет.
+var _combat: CombatAudio
 # Боезапас игрока. null — оружие стреляет бесконечно (фолбэк/автономность).
 var _ammo: AmmoComponent
 
@@ -85,9 +83,6 @@ func _ready() -> void:
 	if body != null:
 		_exclude = [body.get_rid()]
 		_ammo = body.get_node_or_null("AmmoComponent") as AmmoComponent
-
-	_audio = AudioStreamPlayer.new()
-	add_child(_audio)
 
 
 func _process(delta: float) -> void:
@@ -106,7 +101,9 @@ func try_fire() -> bool:
 		return false
 	# Нет патронов — сухой щелчок. Ставим кулдаун, чтобы в авто-режиме щелчок не спамил каждый кадр.
 	if uses_ammo and _ammo != null and not _ammo.has_ammo(ammo_type, ammo_per_shot):
-		_play_sound(empty_sound)
+		var ca := _combat_audio()
+		if ca != null:
+			ca.play(&"dry")
 		_cooldown_timer = fire_cooldown
 		return false
 	_cooldown_timer = fire_cooldown
@@ -154,13 +151,16 @@ func _fire() -> void:
 func _show_effects() -> void:
 	_flash_timer = flash_duration
 	queue_redraw()  # показать вспышку
-	_play_sound(shot_sound)
+	var ca := _combat_audio()
+	if ca != null:
+		ca.play_weapon(slot)  # звук выбирается по слоту ствола
 
 
-func _play_sound(stream: AudioStream) -> void:
-	if stream != null:
-		_audio.stream = stream
-		_audio.play()
+# Ленивый поиск звука боя по группе (создаётся main). Кэшируем; нет — тишина.
+func _combat_audio() -> CombatAudio:
+	if _combat == null or not is_instance_valid(_combat):
+		_combat = get_tree().get_first_node_in_group(&"combat_audio") as CombatAudio
+	return _combat
 
 
 func _draw() -> void:
