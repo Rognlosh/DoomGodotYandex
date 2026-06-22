@@ -2,12 +2,10 @@
 
 [ext_resource type="PackedScene" uid="uid://vix5ymbwwquo" path="res://scenes/pickups/armor/armor_pickup.tscn" id="1_c80p1"]
 
-[sub_resource type="BoxMesh" id="BoxMesh_1jbaq"]
-size = Vector3(0.6, 0.6, 0.6)
-
 [node name="Pickup" unique_id=1531948811 instance=ExtResource("1_c80p1")]
 amount = 200.0
 armor_class = 2
 
-[node name="MeshInstance3D" parent="." index="1" unique_id=32778721]
-mesh = SubResource("BoxMesh_1jbaq")
+[node name="Icon" parent="." index="1" unique_id=700100700]
+pixel_size = 0.024
+color = Color(0.25, 0.68, 1.0, 1)
