@@ -1,25 +1,25 @@
 [gd_scene format=3 uid="uid://ddtpb73e3c5ws"]
 
 [ext_resource type="Script" uid="uid://dst5fgvvn10qb" path="res://scenes/pickups/pickup_base.gd" id="1_rs1tx"]
+[ext_resource type="Script" uid="uid://cpickupspr3d00" path="res://scripts/sprites/pickup_sprite_3d.gd" id="2_picon"]
 
 [sub_resource type="SphereShape3D" id="SphereShape3D_oto2a"]
 radius = 0.6
 
-[sub_resource type="BoxMesh" id="BoxMesh_v0p53"]
-size = Vector3(0.4, 0.4, 0.4)
-
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_e51un"]
-shading_mode = 0
-albedo_color = Color(0.89645135, 0.5680551, 0.97930115, 1)
-
 [node name="Pickup" type="Area3D" unique_id=1531948811]
 script = ExtResource("1_rs1tx")
+spin_speed_deg = 0.0
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=1166977037]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.5, 0)
 shape = SubResource("SphereShape3D_oto2a")
 
-[node name="MeshInstance3D" type="MeshInstance3D" parent="." unique_id=32778721]
+[node name="Icon" type="Sprite3D" parent="." unique_id=700100700]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.5, 0)
-mesh = SubResource("BoxMesh_v0p53")
-surface_material_override/0 = SubResource("StandardMaterial3D_e51un")
+pixel_size = 0.02
+billboard = 2
+alpha_cut = 1
+texture_filter = 0
+script = ExtResource("2_picon")
+shape = 4
+color = Color(0.8, 0.8, 0.85, 1)

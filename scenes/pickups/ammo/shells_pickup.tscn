@@ -1,0 +1,12 @@
+[gd_scene format=3 uid="uid://cshellspickup0"]
+
+[ext_resource type="PackedScene" uid="uid://capg6k5fgvtti" path="res://scenes/pickups/ammo/ammo_pickup.tscn" id="1_shl"]
+
+[node name="Pickup" unique_id=1531948811 instance=ExtResource("1_shl")]
+ammo_type = &"shells"
+amount = 8
+
+[node name="Icon" parent="." index="1" unique_id=700100700]
+pixel_size = 0.018
+shape = 1
+color = Color(0.82, 0.18, 0.15, 1)

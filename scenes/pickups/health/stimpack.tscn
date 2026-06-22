@@ -2,12 +2,9 @@
 
 [ext_resource type="PackedScene" uid="uid://cxhi7nu45a6fs" path="res://scenes/pickups/health/health_pickup.tscn" id="1_w6s2u"]
 
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_24hak"]
-shading_mode = 0
-albedo_color = Color(0.52169025, 0.8149026, 0.2586421, 1)
-
 [node name="Pickup" unique_id=1531948811 instance=ExtResource("1_w6s2u")]
 heal_amount = 10.0
 
-[node name="MeshInstance3D" parent="." index="1" unique_id=32778721]
-surface_material_override/0 = SubResource("StandardMaterial3D_24hak")
+[node name="Icon" parent="." index="1" unique_id=700100700]
+pixel_size = 0.016
+color = Color(0.3, 0.8, 0.35, 1)

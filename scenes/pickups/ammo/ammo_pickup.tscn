@@ -3,13 +3,12 @@
 [ext_resource type="PackedScene" uid="uid://ddtpb73e3c5ws" path="res://scenes/pickups/pickup_base.tscn" id="1_lty2n"]
 [ext_resource type="Script" uid="uid://dlhpvyrwon8vj" path="res://scenes/pickups/ammo/ammo_pickup.gd" id="2_r5ix3"]
 
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_jgu5d"]
-albedo_color = Color(0.52, 0.19291998, 0.1352, 1)
-
 [node name="Pickup" unique_id=1531948811 instance=ExtResource("1_lty2n")]
 script = ExtResource("2_r5ix3")
 ammo_type = &"bullets"
 amount = 20
 
-[node name="MeshInstance3D" parent="." index="1" unique_id=32778721]
-surface_material_override/0 = SubResource("StandardMaterial3D_jgu5d")
+[node name="Icon" parent="." index="1" unique_id=700100700]
+pixel_size = 0.018
+shape = 0
+color = Color(0.85, 0.72, 0.25, 1)

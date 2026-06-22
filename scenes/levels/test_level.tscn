@@ -4,6 +4,7 @@
 [ext_resource type="PackedScene" uid="uid://brss1c0pylcw7" path="res://scenes/enemies/rusher.tscn" id="3_fr1um"]
 [ext_resource type="PackedScene" uid="uid://cp18osb6lofdo" path="res://scenes/enemies/shooter.tscn" id="4_48ne7"]
 [ext_resource type="PackedScene" uid="uid://bgwuea57qy16a" path="res://scenes/enemies/flyer.tscn" id="5_6xh4u"]
+[ext_resource type="PackedScene" uid="uid://cshellspickup0" path="res://scenes/pickups/ammo/shells_pickup.tscn" id="6_shl"]
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_3hp5k"]
 albedo_color = Color(0.16274172, 0.12389998, 0.59, 1)
@@ -63,3 +64,6 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -9, 0, -9)
 
 [node name="Enemy6" parent="." unique_id=1701548116 instance=ExtResource("5_6xh4u")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 10, 5, -11)
+
+[node name="ShellsPickup" parent="." unique_id=700200700 instance=ExtResource("6_shl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.5, 0, 1.5)
