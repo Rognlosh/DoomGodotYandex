@@ -19,7 +19,6 @@ const _LIBRARY := {
 	&"impact_flesh": "sfx_impact_flesh.ogg",
 	&"enemy_attack": "sfx_enemy_attack.ogg",
 	&"enemy_death": "sfx_enemy_death.ogg",
-	&"player_hurt": "sfx_player_hurt.ogg",
 	&"player_death": "sfx_player_death.ogg",
 }
 const _AMBIENT := "amb_level.ogg"

@@ -15,8 +15,6 @@ var _hud: Hud
 var _ammo: AmmoComponent
 # Звук боя — создаём здесь, источники находят его по группе.
 var _combat: CombatAudio
-# Последнее здоровье игрока — чтобы отличить урон (звук боли) от лечения.
-var _player_health: float = 0.0
 
 
 func _ready() -> void:
@@ -64,11 +62,9 @@ func _setup_hud(player: Node3D) -> void:
 		push_error("Main: у игрока не найден HealthComponent.")
 		return
 	health.health_changed.connect(_hud.set_health)
-	health.health_changed.connect(_on_player_health_audio)
 	health.died.connect(_on_player_died)
 	# Компонент шлёт health_changed только при изменении — стартовое значение пушим вручную.
 	_hud.set_health(health.current_health, health.max_health)
-	_player_health = health.current_health
 
 	# Броня игрока — отдельный компонент перед HP (если есть). signal up, как со здоровьем.
 	var armor := player.get_node_or_null("ArmorComponent") as ArmorComponent
@@ -146,14 +142,6 @@ func _on_player_died() -> void:
 	get_tree().paused = true
 	Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
 	_hud.show_game_over()
-
-
-# Звук боли — только когда здоровье упало (не на лечении пикапом) и игрок ещё жив
-# (на добивающем ударе звучит смерть через died).
-func _on_player_health_audio(current: float, _maximum: float) -> void:
-	if current < _player_health and current > 0.0 and _combat != null:
-		_combat.play(&"player_hurt")
-	_player_health = current
 
 
 func _on_restart_requested() -> void:
