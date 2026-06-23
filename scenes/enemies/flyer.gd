@@ -1,8 +1,8 @@
 class_name EnemyFlyer
 extends EnemyBase
 ## Летун: движется к цели в полном 3D (по высоте тоже), не падает.
-## Переопределяет движение и гравитацию; атака — контактная (как у базы).
-## Стрельбу снарядами добавим отдельной фичей (Имп/Какодемон-файрбол).
+## Атака — дальний бой файрболом, если назначен projectile_scene; иначе контактная
+## (как у базы) — задел под будущего контактного летуна («череп» из DOOM).
 
 @export_group("Полёт")
 ## На какой высоте цели держаться (центр игрока ~1.0, голова ~1.6).
@@ -10,6 +10,14 @@ extends EnemyBase
 ## Как быстро гасится вертикальная скорость, когда полётом не управляют
 ## (в атаке/простое) — чтобы летун завис, а не уплывал. Ед/с.
 @export var hover_damp: float = 12.0
+
+@export_group("Дальний бой")
+## Снаряд-файрбол. Пусто — летун бьёт в упор (контактная атака базы).
+@export var projectile_scene: PackedScene
+## Высота точки прицела/вылета над origin (своим и цели), м.
+@export var aim_height: float = 1.0
+## Смещение точки вылета вперёд по направлению на цель, м.
+@export var muzzle_forward: float = 0.6
 
 
 # Летун не падает. Гасим вертикаль только когда движением не управляют
@@ -28,6 +36,24 @@ func _move_towards_target(_delta: float) -> void:
 	move_and_slide()
 
 
+# Атака: файрбол, если назначен снаряд; иначе — контактная атака базы.
+func _perform_attack() -> void:
+	if projectile_scene == null:
+		super._perform_attack()
+		return
+	_sprite.play(&"attack")
+	if _target == null:
+		return
+	# Стена закрыла линию — не плюём в стену впустую.
+	if not _has_line_of_sight():
+		return
+	var muzzle := global_position + Vector3.UP * aim_height
+	var aim_at := _target.global_position + Vector3.UP * aim_height
+	var dir := (aim_at - muzzle).normalized()
+	muzzle += dir * muzzle_forward
+	Projectile.launch(projectile_scene, self, muzzle, dir, get_rid())
+
+
 func _on_death() -> void:
 	super._on_death()  # стандартная смерть базы (стоп, коллизия off, анимация, таймер трупа)
 	_drop_corpse_to_floor()
@@ -40,14 +66,12 @@ func _drop_corpse_to_floor() -> void:
 	var from := global_position + Vector3.UP * 0.5
 	var to := global_position + Vector3.DOWN * 100.0
 	var query := PhysicsRayQueryParameters3D.create(from, to)
-	query.exclude = [get_rid()]  # себя не учитываем
+	query.exclude = [get_rid()]
 	var hit := space.intersect_ray(query)
 	if hit.is_empty():
-		return  # пол не нашли — оставляем где есть
+		return
 	var floor_y: float = hit["position"].y
-	# Origin тела = низ капсулы, так что ставим origin.y на пол.
 	var fall_time := maxf(0.15, (global_position.y - floor_y) * 0.08)
 	var tween := create_tween()
-	# "global_position:y" — путь к под-свойству .y (как nested property в C#).
 	var step := tween.tween_property(self, "global_position:y", floor_y, fall_time)
 	step.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
