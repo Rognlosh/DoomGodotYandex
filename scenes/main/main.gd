@@ -9,6 +9,11 @@ extends Node3D
 ## Сцена HUD (назначается в инспекторе). Корень — CanvasLayer, внутри узел "Root" (Hud).
 @export var hud_scene: PackedScene
 
+## Игрок умер. Роутер (Game) поднимет экран Game Over и поставит паузу.
+signal player_died
+## Игрок нажал Esc в геймплее. Роутер откроет меню паузы.
+signal pause_requested
+
 # Ссылка на узел HUD (Control), чтобы дёргать его методы.
 var _hud: Hud
 # Боезапас игрока — для пуша актуального счётчика на HUD при смене оружия.
@@ -54,7 +59,6 @@ func _setup_hud(player: Node3D) -> void:
 	if _hud == null:
 		push_error("Main: в hud_scene не найден узел 'Root' со скриптом Hud.")
 		return
-	_hud.restart_requested.connect(_on_restart_requested)
 
 	# Здоровье игрока — тот же HealthComponent, что у врага.
 	var health := player.get_node_or_null("HealthComponent") as HealthComponent
@@ -135,16 +139,16 @@ func _sync_ammo_type(type: StringName) -> void:
 	_hud.on_ammo_changed(type, _ammo.get_ammo(type), _ammo.get_max(type))
 
 
-# Игрок умер: стоп всей игры, свободная мышь, оверлей. Рестарт — по клавише (сигнал от HUD).
+# Esc в геймплее — просим роутер открыть паузу. Когда оверлей открыт,
+# сессия на паузе и этот ввод сюда не доходит (Esc ловит меню паузы).
+func _unhandled_input(event: InputEvent) -> void:
+	if event.is_action_pressed(&"ui_cancel"):
+		get_viewport().set_input_as_handled()
+		pause_requested.emit()
+
+
+# Игрок умер: озвучиваем и сообщаем наверх. Паузу/мышь/оверлей берёт на себя роутер.
 func _on_player_died() -> void:
 	if _combat != null:
 		_combat.play(&"player_death")
-	get_tree().paused = true
-	Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
-	_hud.show_game_over()
-
-
-func _on_restart_requested() -> void:
-	# Снять паузу ДО перезагрузки, иначе новая сцена стартует замороженной.
-	get_tree().paused = false
-	get_tree().reload_current_scene()
+	player_died.emit()
