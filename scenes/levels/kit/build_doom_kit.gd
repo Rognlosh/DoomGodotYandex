@@ -179,6 +179,11 @@ func _build_level(lib: MeshLibrary) -> void:
 	var gm := GridMap.new()
 	gm.name = "GridMap"
 	gm.cell_size = Vector3(CELL, CELL, CELL)
+	# Центрируем по X/Z, но НЕ по Y: иначе клетка смещается на полклетки вверх
+	# и пол оказывается на ~2 м выше спавна (всё спавнится «под уровнем»).
+	gm.cell_center_x = true
+	gm.cell_center_y = false
+	gm.cell_center_z = true
 	gm.mesh_library = lib
 	gm.position = Vector3(0, LIFT, 0)   # верх пола → y≈0
 	root.add_child(gm)
@@ -225,12 +230,13 @@ func _build_level(lib: MeshLibrary) -> void:
 		printerr("[kit] сохранение уровня не удалось: ", save_err)
 
 
-# центр клетки → мировые координаты (GridMap по X/Z в нуле, клетки центрируются)
+# центр клетки → мировые координаты. X/Z центрированы (+полклетки),
+# по Y центрирование выключено, поэтому объекты ставим на верх пола (y≈0).
 func _wx(gx: int) -> float:
-	return gx * CELL
+	return gx * CELL + CELL * 0.5
 
 func _wz(gz: int) -> float:
-	return gz * CELL
+	return gz * CELL + CELL * 0.5
 
 
 # Инстанс сцены с установкой owner только на корне инстанса (иначе ломается инстансинг).
