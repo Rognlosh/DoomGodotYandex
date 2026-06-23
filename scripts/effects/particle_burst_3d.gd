@@ -43,7 +43,7 @@ func _ready() -> void:
 
 ## Сыграть всплеск в точке, развёрнутый по нормали поверхности.
 ## Подключается к WeaponManager.{surface_hit|damageable_hit}.
-func spawn(position: Vector3, normal: Vector3) -> void:
+func spawn(pos: Vector3, normal: Vector3) -> void:
 	if _pool.is_empty():
 		return
 	var p := _pool[_next]
@@ -51,7 +51,7 @@ func spawn(position: Vector3, normal: Vector3) -> void:
 
 	var n := normal.normalized() if normal.length() > 0.0 else Vector3.UP
 	# Ставим в точку (с отступом) и разворачиваем -Z вдоль нормали — частицы летят от поверхности.
-	p.global_position = position + n * surface_offset
+	p.global_position = pos + n * surface_offset
 	p.look_at(p.global_position + n, _pick_up(n))
 	p.restart()  # перезапуск разовой эмиссии
 
