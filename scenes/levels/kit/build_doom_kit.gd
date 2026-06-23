@@ -22,6 +22,7 @@ const TEX_FLOOR := "res://assets/textures/tex_floor.png"
 const TEX_CEIL := "res://assets/textures/tex_ceiling.png"
 
 const MESHLIB_PATH := "res://scenes/levels/kit/doom_kit.tres"
+const ENTITIES_MESHLIB_PATH := "res://scenes/levels/kit/doom_entities.tres"
 const LEVEL_PATH := "res://scenes/levels/level_doom_01.tscn"
 
 # id предметов в MeshLibrary
@@ -33,24 +34,55 @@ const CEILING_ID := 2
 const FLOOR_OFF := -CELL * 0.5 + TH * 0.5   # плита пола у низа клетки
 const CEIL_OFF := CELL * 0.5 - TH * 0.5     # плита потолка у верха клетки
 
+# --- маркеры сущностей (слой Entities) ------------------------------------
+const MARKER_SIZE := 3.6   # размер плитки-маркера (чуть меньше клетки)
+const MARKER_Y := 0.05     # приподнят над полом, чтобы не z-fight
+const ICON_DIR := "res://assets/textures/entities/"
+# [id, имя в палитре, файл иконки]. id совпадают с EntitySpawner.SCENES.
+const MARKERS := [
+	[0, "spawn", "icon_spawn.png"],
+	[1, "exit", "icon_exit.png"],
+	[2, "enemy_rusher", "icon_rusher.png"],
+	[3, "enemy_shooter", "icon_shooter.png"],
+	[4, "enemy_flyer", "icon_flyer.png"],
+	[5, "pickup_ammo", "icon_ammo.png"],
+	[6, "pickup_shells", "icon_shells.png"],
+	[7, "pickup_health_bonus", "icon_health_bonus.png"],
+	[8, "pickup_stimpack", "icon_stimpack.png"],
+	[9, "pickup_medikit", "icon_medikit.png"],
+	[10, "pickup_soulsphere", "icon_soulsphere.png"],
+	[11, "pickup_armor_bonus", "icon_armor_bonus.png"],
+	[12, "pickup_armor_green", "icon_armor_green.png"],
+	[13, "pickup_armor_blue", "icon_armor_blue.png"],
+]
+
 
 func _run() -> void:
 	print("[kit] сборка началась")
 	var lib := _build_library()
-	var err := ResourceSaver.save(lib, MESHLIB_PATH)
-	if err != OK:
-		printerr("[kit] не удалось сохранить MeshLibrary: ", err)
+	if ResourceSaver.save(lib, MESHLIB_PATH) != OK:
+		printerr("[kit] не удалось сохранить кит-библиотеку")
 		return
-	print("[kit] MeshLibrary сохранён → ", MESHLIB_PATH)
+	print("[kit] кит сохранён → ", MESHLIB_PATH)
 
-	_build_level(lib)
-	print("[kit] уровень сохранён → ", LEVEL_PATH)
+	var ents := _build_entities_library()
+	if ResourceSaver.save(ents, ENTITIES_MESHLIB_PATH) != OK:
+		printerr("[kit] не удалось сохранить doom_entities")
+		return
+	print("[kit] маркеры сущностей сохранены → ", ENTITIES_MESHLIB_PATH)
+
+	# Уровень не перезаписываем, если он уже есть — твои правки останутся целы.
+	if FileAccess.file_exists(LEVEL_PATH):
+		print("[kit] %s уже есть — уровень НЕ тронут, обновлены только библиотеки." % LEVEL_PATH)
+	else:
+		_build_level(lib, ents)
+		print("[kit] стартовый уровень создан → ", LEVEL_PATH)
 
 	# обновить FileSystem-док, чтобы новые файлы появились сразу
 	var fs := EditorInterface.get_resource_filesystem()
 	if fs:
 		fs.scan()
-	print("[kit] готово. Перетащи level_doom_01.tscn в main.tscn → levels.")
+	print("[kit] готово.")
 
 
 # --- материалы ------------------------------------------------------------
@@ -131,6 +163,31 @@ func _build_library() -> MeshLibrary:
 	return lib
 
 
+# --- библиотека маркеров сущностей ----------------------------------------
+# Маркер — плоская плитка-декаль с иконкой (видна сверху в редакторе), без
+# коллизии. В игре EntitySpawner заменяет её на настоящую сцену.
+func _marker_mesh(icon_file: String) -> PlaneMesh:
+	var pm := PlaneMesh.new()
+	pm.size = Vector2(MARKER_SIZE, MARKER_SIZE)
+	var mat := StandardMaterial3D.new()
+	mat.albedo_texture = load(ICON_DIR + icon_file)
+	mat.texture_filter = BaseMaterial3D.TEXTURE_FILTER_NEAREST
+	mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED  # цвет иконки как есть
+	pm.material = mat
+	return pm
+
+
+func _build_entities_library() -> MeshLibrary:
+	var lib := MeshLibrary.new()
+	for m in MARKERS:
+		var id: int = m[0]
+		lib.create_item(id)
+		lib.set_item_name(id, m[1])
+		lib.set_item_mesh(id, _marker_mesh(m[2]))
+		lib.set_item_mesh_transform(id, Transform3D(Basis(), Vector3(0, MARKER_Y, 0)))
+	return lib
+
+
 # --- стартовый уровень ----------------------------------------------------
 # Прямоугольная заливка пола.
 func _fill(cells: Dictionary, x0: int, z0: int, x1: int, z1: int) -> void:
@@ -139,7 +196,7 @@ func _fill(cells: Dictionary, x0: int, z0: int, x1: int, z1: int) -> void:
 			cells[Vector2i(x, z)] = true
 
 
-func _build_level(lib: MeshLibrary) -> void:
+func _build_level(lib: MeshLibrary, ents: MeshLibrary) -> void:
 	var root := Node3D.new()
 	root.name = "LevelDoom01"
 
@@ -211,6 +268,20 @@ func _build_level(lib: MeshLibrary) -> void:
 	ceil_gm.set_script(load("res://scripts/levels/ceiling_gridmap.gd"))
 	root.add_child(ceil_gm)
 	ceil_gm.owner = root
+
+	# --- Слой сущностей (Entities) со скриптом EntitySpawner ---
+	# Пустой, готов к покраске маркерами (спавн/выход/враги/пикапы).
+	# В игре маркеры превращаются в настоящие сцены, сами маркеры прячутся.
+	var ent_gm := GridMap.new()
+	ent_gm.name = "Entities"
+	ent_gm.cell_size = Vector3(CELL, CELL, CELL)
+	ent_gm.cell_center_x = true
+	ent_gm.cell_center_y = false
+	ent_gm.cell_center_z = true
+	ent_gm.mesh_library = ents
+	ent_gm.set_script(load("res://scripts/levels/entity_spawner.gd"))
+	root.add_child(ent_gm)
+	ent_gm.owner = root
 
 	# --- спавн игрока (Комната A) ---
 	var spawn := Marker3D.new()
