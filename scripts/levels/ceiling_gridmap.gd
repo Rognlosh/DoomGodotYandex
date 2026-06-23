@@ -9,8 +9,8 @@ extends GridMap
 
 ## Путь к GridMap с полом (по умолчанию — соседний узел "GridMap").
 @export var floor_map_path: NodePath = NodePath("../GridMap")
-## id предмета "floor" в MeshLibrary (источник клеток).
-@export var floor_item: int = 0
+## id предметов-«пола», над которыми нужен потолок (floor, pillar, door_arch).
+@export var floor_items: Array[int] = [0, 3, 4]
 ## id предмета "ceiling" в MeshLibrary (что ставим сверху).
 @export var ceiling_item: int = 2
 
@@ -30,5 +30,6 @@ func _rebuild() -> void:
 		push_warning("CeilingGridMap: не найден пол по пути %s" % str(floor_map_path))
 		return
 	clear()
-	for cell in src.get_used_cells_by_item(floor_item):
-		set_cell_item(cell, ceiling_item)
+	for item in floor_items:
+		for cell in src.get_used_cells_by_item(item):
+			set_cell_item(cell, ceiling_item)

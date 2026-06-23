@@ -29,10 +29,22 @@ const LEVEL_PATH := "res://scenes/levels/level_doom_01.tscn"
 const FLOOR_ID := 0
 const WALL_ID := 1
 const CEILING_ID := 2
+const PILLAR_ID := 3
+const DOORARCH_ID := 4
 
 # вертикальные смещения плит внутри клетки (от центра меша)
 const FLOOR_OFF := -CELL * 0.5 + TH * 0.5   # плита пола у низа клетки
 const CEIL_OFF := CELL * 0.5 - TH * 0.5     # плита потолка у верха клетки
+
+# колонна (pillar)
+const COL_W := 1.2                          # сторона колонны
+# дверной проём (door_arch): косяки по бокам + перемычка сверху, проём посередине
+const POST_W := 1.0                         # ширина косяка
+const POST_X := CELL * 0.5 - POST_W * 0.5   # центр косяка по X (1.5)
+const OPEN_TOP := 1.0                       # верх проёма (локально), низ — пол
+const LINTEL_H := CELL * 0.5 - OPEN_TOP     # высота перемычки (от OPEN_TOP до верха)
+const LINTEL_CY := (OPEN_TOP + CELL * 0.5) * 0.5  # центр перемычки по Y
+const OPEN_W := CELL - 2.0 * POST_W         # ширина проёма (2.0)
 
 # --- маркеры сущностей (слой Entities) ------------------------------------
 const MARKER_SIZE := 3.6   # размер плитки-маркера (чуть меньше клетки)
@@ -120,6 +132,34 @@ func _slab_mesh(mat: StandardMaterial3D, y_offset: float) -> ArrayMesh:
 	return am
 
 
+# Массивы BoxMesh, сдвинутые на произвольный вектор (для составных предметов).
+func _box_arrays(size: Vector3, offset: Vector3) -> Array:
+	var bm := BoxMesh.new()
+	bm.size = size
+	var arr: Array = bm.get_mesh_arrays()
+	var verts: PackedVector3Array = arr[Mesh.ARRAY_VERTEX]
+	for i in verts.size():
+		verts[i] = verts[i] + offset
+	arr[Mesh.ARRAY_VERTEX] = verts
+	return arr
+
+
+func _box_shape(size: Vector3) -> BoxShape3D:
+	var s := BoxShape3D.new()
+	s.size = size
+	return s
+
+
+# Составной меш из коробок. parts: [[Vector3 size, Vector3 offset, Material], ...]
+func _composite_mesh(parts: Array) -> ArrayMesh:
+	var am := ArrayMesh.new()
+	for i in parts.size():
+		var p: Array = parts[i]
+		am.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, _box_arrays(p[0], p[1]))
+		am.surface_set_material(i, p[2])
+	return am
+
+
 func _build_wall_mesh(mat_wall: StandardMaterial3D) -> BoxMesh:
 	var bm := BoxMesh.new()
 	bm.size = Vector3(CELL, CELL, CELL)
@@ -159,6 +199,35 @@ func _build_library() -> MeshLibrary:
 	var ceil_shape := BoxShape3D.new()
 	ceil_shape.size = Vector3(CELL, TH, CELL)
 	lib.set_item_shapes(CEILING_ID, [ceil_shape, Transform3D(Basis(), Vector3(0, CEIL_OFF, 0))])
+
+	# pillar (id 3): пол + колонна по центру (укрытие). Пол под ногами, колонна блокирует.
+	lib.create_item(PILLAR_ID)
+	lib.set_item_name(PILLAR_ID, "pillar")
+	lib.set_item_mesh(PILLAR_ID, _composite_mesh([
+		[Vector3(CELL, TH, CELL), Vector3(0, FLOOR_OFF, 0), mat_floor],
+		[Vector3(COL_W, CELL, COL_W), Vector3.ZERO, mat_wall],
+	]))
+	lib.set_item_shapes(PILLAR_ID, [
+		_box_shape(Vector3(CELL, TH, CELL)), Transform3D(Basis(), Vector3(0, FLOOR_OFF, 0)),
+		_box_shape(Vector3(COL_W, CELL, COL_W)), Transform3D.IDENTITY,
+	])
+
+	# door_arch (id 4): пол + два косяка по X + перемычка сверху; проём по центру (вдоль Z).
+	# Ставится в линию стены вместо куба; поворотом клетки меняешь направление прохода.
+	lib.create_item(DOORARCH_ID)
+	lib.set_item_name(DOORARCH_ID, "door_arch")
+	lib.set_item_mesh(DOORARCH_ID, _composite_mesh([
+		[Vector3(CELL, TH, CELL), Vector3(0, FLOOR_OFF, 0), mat_floor],
+		[Vector3(POST_W, CELL, CELL), Vector3(-POST_X, 0, 0), mat_wall],
+		[Vector3(POST_W, CELL, CELL), Vector3(POST_X, 0, 0), mat_wall],
+		[Vector3(OPEN_W, LINTEL_H, CELL), Vector3(0, LINTEL_CY, 0), mat_wall],
+	]))
+	lib.set_item_shapes(DOORARCH_ID, [
+		_box_shape(Vector3(CELL, TH, CELL)), Transform3D(Basis(), Vector3(0, FLOOR_OFF, 0)),
+		_box_shape(Vector3(POST_W, CELL, CELL)), Transform3D(Basis(), Vector3(-POST_X, 0, 0)),
+		_box_shape(Vector3(POST_W, CELL, CELL)), Transform3D(Basis(), Vector3(POST_X, 0, 0)),
+		_box_shape(Vector3(OPEN_W, LINTEL_H, CELL)), Transform3D(Basis(), Vector3(0, LINTEL_CY, 0)),
+	])
 
 	return lib
 
