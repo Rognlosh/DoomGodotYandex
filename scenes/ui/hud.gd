@@ -108,4 +108,3 @@ func _draw_hud() -> void:
 	var ammo_w := font.get_string_size(ammo, HORIZONTAL_ALIGNMENT_LEFT, -1, ammo_font_size).x
 	draw_string(font, Vector2(size.x - margin - ammo_w, size.y - margin), ammo,
 			HORIZONTAL_ALIGNMENT_LEFT, -1, ammo_font_size, _TEXT)
-
