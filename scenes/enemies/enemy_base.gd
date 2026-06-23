@@ -21,6 +21,12 @@ enum State { IDLE, CHASE, ATTACK, DEAD }
 ## Через сколько секунд труп исчезает. 0 — остаётся навсегда (труп-декорация).
 @export var corpse_lifetime: float = 0.0
 
+@export_group("Отброс взрывом")
+## Делитель импульса отброса (≈ масса). >1 — враг тяжелее, отлетает слабее.
+@export var knockback_mass: float = 1.0
+## Затухание импульса отброса, ед/с (и у живого, и при оседании трупа).
+@export var knockback_damping: float = 12.0
+
 @onready var _health: HealthComponent = $HealthComponent
 @onready var _sprite: DirectionalSprite3D = $Sprite3D
 
@@ -29,6 +35,10 @@ var _state: State = State.IDLE
 var _attack_timer: float = 0.0
 # Звук боя (находится по группе, лениво). null — звук не играет.
 var _combat: CombatAudio
+# Остаточный импульс отброса от взрыва (живого — гасит; труп — запускает в полёт).
+var _knockback: Vector3 = Vector3.ZERO
+# Труп, запущенный взрывом: летит по баллистике и оседает на пол.
+var _launched: bool = false
 const _EYE_OFFSET := Vector3(0.0, 1.0, 0.0)
 
 
@@ -42,9 +52,25 @@ func take_damage(amount: float) -> void:
 	_health.take_damage(amount)
 
 
+## Импульс отброса от взрыва (конвенция — снаряд зовёт по has_method).
+## Уже лежащий труп (DEAD, не запущенный) не толкаем — но shape-запрос его и так
+## не видит (на смерти collision_layer = 0), так что обычно сюда не доходит.
+func apply_knockback(impulse: Vector3) -> void:
+	if _state == State.DEAD and not _launched:
+		return
+	_knockback += impulse / maxf(knockback_mass, 0.01)
+
+
 func _physics_process(delta: float) -> void:
 	if _state == State.DEAD:
+		if _launched:
+			_process_launch(delta)
 		return
+	# Внешний отброс взрывом — отдельным смещением поверх ИИ: ИИ каждый кадр
+	# перезадаёт velocity, поэтому отброс двигаем через move_and_collide.
+	if _knockback.length_squared() > 0.0001:
+		move_and_collide(_knockback * delta)
+		_knockback = _knockback.move_toward(Vector3.ZERO, knockback_damping * delta)
 	if _attack_timer > 0.0:
 		_attack_timer -= delta
 	_acquire_target()
@@ -80,8 +106,7 @@ func _state_chase(delta: float) -> void:
 
 func _state_attack(delta: float) -> void:
 	_apply_gravity(delta)
-	velocity.x = 0.0
-	velocity.z = 0.0
+	_attack_movement(delta)   # по умолчанию — стоять; летун зависает/страйфит (хук)
 	move_and_slide()
 	if _target == null:
 		_state = State.IDLE
@@ -118,6 +143,13 @@ func _move_towards_target(delta: float) -> void:
 	move_and_slide()
 
 
+## Движение во время атаки. По умолчанию — стоять на месте (наземные стрелок/рашер).
+## Летун переопределяет: зависание на высоте + удержание отступа + страйф.
+func _attack_movement(_delta: float) -> void:
+	velocity.x = 0.0
+	velocity.z = 0.0
+
+
 func _perform_attack() -> void:
 	_sprite.play(&"attack")
 	if _target != null and _target.has_method("take_damage"):
@@ -126,14 +158,34 @@ func _perform_attack() -> void:
 
 func _on_death() -> void:
 	_state = State.DEAD
-	velocity = Vector3.ZERO
+	# Труп невидим для лучей/запросов (не ловит пули, не блокирует). collision_mask
+	# НЕ обнуляем: запущенный взрывом труп должен сталкиваться с полом/стенами.
 	set_deferred(&"collision_layer", 0)
-	set_deferred(&"collision_mask", 0)
 	_sprite.play(&"death", true)  # force — перебить возможную боль
 	_play_combat(&"enemy_death")
+	# Умер ОТ взрыва (есть импульс) — запускаем труп в полёт; иначе просто стоп.
+	if _knockback.length() > 0.1:
+		_launched = true
+		velocity = _knockback
+		_knockback = Vector3.ZERO
+	else:
+		velocity = Vector3.ZERO
 	# Труп остаётся лежать; убираем, только если задан конечный срок жизни.
 	if corpse_lifetime > 0.0:
 		get_tree().create_timer(corpse_lifetime).timeout.connect(queue_free)
+
+
+# Полёт трупа, запущенного взрывом: гаснет по горизонтали, падает, оседает на пол.
+func _process_launch(delta: float) -> void:
+	velocity.x = move_toward(velocity.x, 0.0, knockback_damping * delta)
+	velocity.z = move_toward(velocity.z, 0.0, knockback_damping * delta)
+	if not is_on_floor():
+		velocity.y -= gravity * delta
+	move_and_slide()
+	# Лёг на пол и почти не движется — труп улёгся, дальше не процессим.
+	if is_on_floor() and Vector2(velocity.x, velocity.z).length() < 0.4:
+		velocity = Vector3.ZERO
+		_launched = false
 
 
 # --- Вспомогательное ---

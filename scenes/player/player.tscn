@@ -6,7 +6,9 @@
 [ext_resource type="Script" uid="uid://bp5jo1rxsxdxc" path="res://scripts/ui/crosshair.gd" id="3_gmlin"]
 [ext_resource type="Script" uid="uid://3xtjeljrqxo1" path="res://scripts/components/health_component.gd" id="4_lvxji"]
 [ext_resource type="Script" uid="uid://fe6xb17afane" path="res://scripts/components/ammo_component.gd" id="5_75vfm"]
+[ext_resource type="Script" uid="uid://c36bfbcvp1lnb" path="res://scenes/player/rocket_launcher.gd" id="5_h17s1"]
 [ext_resource type="Script" uid="uid://bguw54o77pkla" path="res://scripts/resources/ammo_type.gd" id="6_0owmy"]
+[ext_resource type="PackedScene" uid="uid://d2kolxkdyheys" path="res://scenes/projectiles/rocket.tscn" id="6_je7p5"]
 [ext_resource type="Script" uid="uid://cjjdm5ul7gm17" path="res://scripts/components/armor_component.gd" id="8_qek5x"]
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_dovo2"]
@@ -23,6 +25,13 @@ script = ExtResource("6_0owmy")
 id = &"shells"
 max_amount = 50
 start_amount = 8
+metadata/_custom_type_script = "uid://bguw54o77pkla"
+
+[sub_resource type="Resource" id="Resource_t07v1"]
+script = ExtResource("6_0owmy")
+id = &"rockets"
+max_amount = 50
+start_amount = 5
 metadata/_custom_type_script = "uid://bguw54o77pkla"
 
 [node name="Player" type="CharacterBody3D" unique_id=21007273 groups=["player"]]
@@ -93,6 +102,20 @@ spread_degrees = 2.0
 body_size = Vector2(90, 64)
 barrel_size = Vector2(22, 90)
 
+[node name="RocketLauncher" type="Control" parent="WeaponLayer/Weapons" unique_id=180678982]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("5_h17s1")
+projectile_scene = ExtResource("6_je7p5")
+slot = 5
+damage = 60.0
+fire_cooldown = 0.8
+ammo_type = &"rockets"
+
 [node name="HealthComponent" type="Node" parent="." unique_id=1053890916]
 script = ExtResource("4_lvxji")
 max_health = 100.0
@@ -101,7 +124,7 @@ overheal_decay = 1.0
 
 [node name="AmmoComponent" type="Node" parent="." unique_id=1004497769]
 script = ExtResource("5_75vfm")
-ammo_types = Array[ExtResource("6_0owmy")]([SubResource("Resource_qek5x"), SubResource("Resource_5gtgg")])
+ammo_types = Array[ExtResource("6_0owmy")]([SubResource("Resource_qek5x"), SubResource("Resource_5gtgg"), SubResource("Resource_t07v1")])
 
 [node name="ArmorComponent" type="Node" parent="." unique_id=1351681111]
 script = ExtResource("8_qek5x")

@@ -6,6 +6,7 @@
 [ext_resource type="PackedScene" uid="uid://bmcwnnt85t56w" path="res://scenes/ui/hud.tscn" id="4_l3cfh"]
 [ext_resource type="Script" uid="uid://cirspvw4t2yde" path="res://scripts/effects/impact_smoke.gd" id="5_6q06x"]
 [ext_resource type="Script" uid="uid://chitstars0pow" path="res://scripts/effects/hit_stars.gd" id="6_stars"]
+[ext_resource type="Script" uid="uid://6hbrnaxldgob" path="res://scripts/effects/explosion.gd" id="7_hujxm"]
 
 [node name="Main" type="Node3D" unique_id=505731654]
 script = ExtResource("1_k2fmo")
@@ -20,3 +21,8 @@ particle_size = 0.5
 [node name="HitStars" type="Node3D" parent="." unique_id=1653924974]
 script = ExtResource("6_stars")
 star_size = 0.4
+
+[node name="Explosion" type="Node3D" parent="." unique_id=989765580]
+script = ExtResource("7_hujxm")
+
+[node name="Projectiles" type="Node3D" parent="." unique_id=850446858 groups=["world_projectiles"]]

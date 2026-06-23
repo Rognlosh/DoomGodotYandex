@@ -71,6 +71,9 @@ var _exclude: Array[RID] = []
 var _combat: CombatAudio
 # Боезапас игрока. null — оружие стреляет бесконечно (фолбэк/автономность).
 var _ammo: AmmoComponent
+# Тело игрока (CollisionObject3D) — для исключения из луча и как owner снаряда
+# (используется наследниками, напр. RocketLauncher).
+var _body: CollisionObject3D
 
 
 func _ready() -> void:
@@ -81,6 +84,7 @@ func _ready() -> void:
 	# Исключаем тело игрока из луча (камера внутри его капсулы); заодно берём AmmoComponent.
 	var body := _find_collision_ancestor()
 	if body != null:
+		_body = body
 		_exclude = [body.get_rid()]
 		_ammo = body.get_node_or_null("AmmoComponent") as AmmoComponent
 

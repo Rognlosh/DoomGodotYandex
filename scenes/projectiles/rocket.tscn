@@ -1,0 +1,8 @@
+[gd_scene format=3 uid="uid://d2kolxkdyheys"]
+
+[ext_resource type="PackedScene" uid="uid://dnsuc42g42ra4" path="res://scenes/projectiles/projectile.tscn" id="1_r4mtq"]
+
+[node name="Rocket" unique_id=2077507407 instance=ExtResource("1_r4mtq")]
+splash_radius = 3.5
+color = Color(0.97633153, 0.76862043, 0.48452926, 1)
+sprite_size = 0.45
