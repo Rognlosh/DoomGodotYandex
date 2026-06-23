@@ -1,0 +1,11 @@
+[gd_scene format=3 uid="uid://dnsuc42g42ra4"]
+
+[ext_resource type="Script" uid="uid://b2icyup7ihh62" path="res://scenes/projectiles/projectile.gd" id="1_dtkph"]
+
+[node name="Projectile" type="Node3D" unique_id=2077507407]
+script = ExtResource("1_dtkph")
+
+[node name="Sprite3D" type="Sprite3D" parent="." unique_id=393025512]
+billboard = 2
+alpha_cut = 1
+texture_filter = 0
