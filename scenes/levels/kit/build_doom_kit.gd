@@ -75,12 +75,16 @@ func _run() -> void:
 	if ResourceSaver.save(lib, MESHLIB_PATH) != OK:
 		printerr("[kit] не удалось сохранить кит-библиотеку")
 		return
+	# Перечитываем с диска: тогда уровень СОШЛЁТСЯ на файл (ext_resource), а не
+	# встроит копию библиотеки в .tscn (иначе правки doom_kit.tres не видны в палитре).
+	lib = load(MESHLIB_PATH) as MeshLibrary
 	print("[kit] кит сохранён → ", MESHLIB_PATH)
 
 	var ents := _build_entities_library()
 	if ResourceSaver.save(ents, ENTITIES_MESHLIB_PATH) != OK:
 		printerr("[kit] не удалось сохранить doom_entities")
 		return
+	ents = load(ENTITIES_MESHLIB_PATH) as MeshLibrary
 	print("[kit] маркеры сущностей сохранены → ", ENTITIES_MESHLIB_PATH)
 
 	# Уровень не перезаписываем, если он уже есть — твои правки останутся целы.
