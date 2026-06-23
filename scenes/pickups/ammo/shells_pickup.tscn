@@ -1,4 +1,4 @@
-[gd_scene format=3 uid="uid://cshellspickup0"]
+[gd_scene format=3 uid="uid://bgfgmkhxv4l16"]
 
 [ext_resource type="PackedScene" uid="uid://capg6k5fgvtti" path="res://scenes/pickups/ammo/ammo_pickup.tscn" id="1_shl"]
 
