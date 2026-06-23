@@ -104,13 +104,22 @@ func _load_level(fresh_player: bool) -> void:
 	_level = levels[_level_index].instantiate()
 	add_child(_level)
 
-	# Ставим игрока в точку спавна нового уровня.
+	# Точку спавна и выходы читаем ОТЛОЖЕННО. Если уровень использует слой Entities,
+	# маркеры превращаются в узлы (PlayerSpawn/LevelExit/враги) тоже отложенно — на
+	# момент add_child дерево ещё «занято» и add_child в него запрещён. К следующему
+	# кадру и прямые узлы, и созданные спавнером уже на месте.
+	_resolve_spawn_and_exits.call_deferred()
+
+
+# Поставить игрока в точку спавна и подписаться на выходы. Идемпотентно.
+func _resolve_spawn_and_exits() -> void:
+	if _level == null:
+		return
 	var spawn := _level.get_node_or_null("PlayerSpawn")
 	if spawn is Node3D and _player != null:
 		# Игрок вызывается по-утиному (как take_damage/add_ammo) — роутер/сессия
 		# не держат статической ссылки на его скрипт.
 		_player.call(&"teleport_to", (spawn as Node3D).global_transform)
-
 	_connect_exits()
 
 
@@ -133,7 +142,7 @@ func _connect_exits() -> void:
 	var exits := _level.find_children("*", "LevelExit", true, false)
 	for node in exits:
 		var exit := node as LevelExit
-		if exit != null:
+		if exit != null and not exit.reached.is_connected(_on_level_exit):
 			exit.reached.connect(_on_level_exit)
 	if exits.is_empty():
 		push_warning("Main: на уровне нет LevelExit — пройти его будет нельзя.")
