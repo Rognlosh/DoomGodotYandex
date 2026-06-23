@@ -2,8 +2,8 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://dent09icon0"
-path="res://.godot/imported/icon_shells.png-00000000000000000000000000000000.ctex"
+uid="uid://dent1aicon0"
+path="res://.godot/imported/icon_shells.png-3e1afdbe4b0c078b7c03b89fdad2452e.ctex"
 metadata={
 "vram_texture": false
 }
@@ -11,7 +11,7 @@ metadata={
 [deps]
 
 source_file="res://assets/textures/entities/icon_shells.png"
-dest_files=["res://.godot/imported/icon_shells.png-00000000000000000000000000000000.ctex"]
+dest_files=["res://.godot/imported/icon_shells.png-3e1afdbe4b0c078b7c03b89fdad2452e.ctex"]
 
 [params]
 
