@@ -117,6 +117,15 @@ func _aim(mouse_delta: Vector2) -> void:
 	head.rotation.x = clampf(head.rotation.x, -limit, limit)
 
 
+## Поставить игрока в точку спавна (нового уровня/рестарта): позиция и поворот
+## из маркера, обнулить скорость и наклон головы — иначе перенесётся инерция
+## и наклон взгляда с прошлого места. Зовётся сессией после add_child.
+func teleport_to(xform: Transform3D) -> void:
+	global_transform = xform
+	velocity = Vector3.ZERO
+	head.rotation.x = 0.0
+
+
 func _physics_process(delta: float) -> void:
 	var on_floor := is_on_floor()
 

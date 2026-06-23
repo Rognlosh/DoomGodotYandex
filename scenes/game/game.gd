@@ -82,6 +82,9 @@ func start_game() -> void:
 	# статического знания о сигналах чужого скрипта, connect() это снимает.
 	_session.connect(&"player_died", _on_player_died)
 	_session.connect(&"pause_requested", _on_pause_requested)
+	# Поток уровней: пройден уровень / пройдена кампания → роутер показывает экран.
+	_session.connect(&"level_completed", _on_level_completed)
+	_session.connect(&"campaign_completed", _on_campaign_completed)
 	add_child(_session)
 	_refresh_mode()
 
@@ -124,6 +127,51 @@ func _on_pause_requested() -> void:
 	)
 
 
+# Пройден уровень, впереди ещё есть — промежуточный экран. По "Дальше" говорим
+# сессии переключиться (call down); индекс уровня знает сессия, не роутер.
+func _on_level_completed() -> void:
+	_open_overlay(
+		"Уровень пройден",
+		"",
+		[{"id": &"next", "label": "Дальше"}],
+		0.85,
+		&"",            # Esc не закрывает — нужно осознанно нажать "Дальше"
+		_on_intermission_selected
+	)
+
+
+func _on_intermission_selected(id: StringName) -> void:
+	if id == &"next":
+		# Сперва свап уровня, потом закрытие оверлея: его _refresh_mode зафиксирует
+		# режим мыши последним (иначе _ready нового игрока перебил бы захват на VISIBLE).
+		if _session != null:
+			_session.call(&"advance_level")
+		_close_top_overlay()
+
+
+# Пройден последний уровень — экран победы.
+func _on_campaign_completed() -> void:
+	_open_overlay(
+		"ПОБЕДА",
+		"Вы прошли все уровни.",
+		[
+			{"id": &"replay", "label": "Заново"},
+			{"id": &"to_menu", "label": "В главное меню"},
+		],
+		0.92,           # почти непрозрачно — это финальный экран
+		&"",            # Esc не закрывает
+		_on_victory_selected
+	)
+
+
+func _on_victory_selected(id: StringName) -> void:
+	match id:
+		&"replay":
+			start_game()    # свежая кампания с уровня 0 (новая сессия)
+		&"to_menu":
+			_show_main_menu()
+
+
 # --------------------------------------------------------------------------
 # Обработка выбора в меню
 # --------------------------------------------------------------------------
@@ -155,7 +203,14 @@ func _on_pause_selected(id: StringName) -> void:
 func _on_game_over_selected(id: StringName) -> void:
 	match id:
 		&"restart":
-			start_game()
+			# Рестарт уровня делает сессия НА МЕСТЕ: сохраняет индекс кампании
+			# и не перезапускает эмбиент. Прежней грабли с self/get_viewport()
+			# нет — узел сессии жив, reload_current_scene не зовём. Закрытие
+			# оверлея — последним: его _refresh_mode зафиксирует захват мыши после
+			# того, как _ready нового игрока поставит её VISIBLE.
+			if _session != null:
+				_session.call(&"restart_level")
+			_close_top_overlay()
 		&"to_menu":
 			_show_main_menu()
 
