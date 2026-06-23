@@ -3,7 +3,7 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://dkitfloor0tex"
-path="res://.godot/imported/tex_floor.png-00000000000000000000000000000000.ctex"
+path="res://.godot/imported/tex_floor.png-4ae3b5600c898c9aa8b846de3c816b1e.ctex"
 metadata={
 "vram_texture": false
 }
@@ -11,7 +11,7 @@ metadata={
 [deps]
 
 source_file="res://assets/textures/tex_floor.png"
-dest_files=["res://.godot/imported/tex_floor.png-00000000000000000000000000000000.ctex"]
+dest_files=["res://.godot/imported/tex_floor.png-4ae3b5600c898c9aa8b846de3c816b1e.ctex"]
 
 [params]
 
