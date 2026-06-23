@@ -18,7 +18,7 @@ aim_height = 1.0
 muzzle_forward = 0.6
 move_speed = 5.0
 detection_range = 40.0
-attack_range = 20.0
+attack_range = 14.0
 attack_cooldown = 1.4
 
 [node name="Sprite3D" parent="." index="1" unique_id=913123013]
