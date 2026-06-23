@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3 uid="uid://cmnscrn0menu01"]
+
+[ext_resource type="Script" path="res://scenes/ui/menus/menu_screen.gd" id="1_menu"]
+
+[node name="MenuScreen" type="CanvasLayer"]
+script = ExtResource("1_menu")

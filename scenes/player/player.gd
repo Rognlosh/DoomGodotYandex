@@ -92,11 +92,6 @@ func _input(event: InputEvent) -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
-	# Esc — освобождаем курсор.
-	if event.is_action_pressed(&"ui_cancel"):
-		Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
-		return
-
 	# Обзор мышью работает только при захваченном курсоре.
 	if event is InputEventMouseMotion and Input.get_mouse_mode() == Input.MOUSE_MODE_CAPTURED:
 		var motion := event as InputEventMouseMotion
