@@ -12,6 +12,7 @@
 [ext_resource type="PackedScene" uid="uid://c4hoyp01gwoo3" path="res://scenes/pickups/armor/armor_blue.tscn" id="8_jmx14"]
 [ext_resource type="PackedScene" uid="uid://bj1k41he46fmw" path="res://scenes/pickups/health/stimpack.tscn" id="11_a5rnb"]
 [ext_resource type="PackedScene" uid="uid://duindq6qmt6x8" path="res://scenes/pickups/health/soulsphere.tscn" id="12_fqldq"]
+[ext_resource type="PackedScene" uid="uid://clevelexitsc0" path="res://scenes/levels/level_exit.tscn" id="20_lexit"]
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_3hp5k"]
 albedo_color = Color(0.16274172, 0.12389998, 0.59, 1)
@@ -101,3 +102,6 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -5.0803967, 4.7683716e-07, 2.
 
 [node name="Pickup12" parent="." unique_id=1161971198 instance=ExtResource("12_fqldq")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.438869, 0, 2.2852874)
+
+[node name="LevelExit" parent="." instance=ExtResource("20_lexit")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -16)
