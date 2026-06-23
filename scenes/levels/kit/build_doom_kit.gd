@@ -197,9 +197,9 @@ func _build_level(lib: MeshLibrary) -> void:
 	for c: Vector2i in wall_cells.keys():
 		gm.set_cell_item(Vector3i(c.x, 0, c.y), WALL_ID)
 
-	# --- Потолок отдельным GridMap (виден только в игре) ---
-	# В редакторе прячется компонентом HideInEditor — сверху всё видно,
-	# предметы цепляются за пол, а не за потолок.
+	# --- Потолок отдельным GridMap со скриптом CeilingGridMap ---
+	# В редакторе он скрыт; в игре сам повторяет пол. Клетки тут не рисуем —
+	# скрипт строит потолок по полу в рантайме (включая дорисованное вручную).
 	var ceil_gm := GridMap.new()
 	ceil_gm.name = "Ceiling"
 	ceil_gm.cell_size = Vector3(CELL, CELL, CELL)
@@ -208,15 +208,9 @@ func _build_level(lib: MeshLibrary) -> void:
 	ceil_gm.cell_center_z = true
 	ceil_gm.mesh_library = lib
 	ceil_gm.position = Vector3(0, LIFT, 0)
+	ceil_gm.set_script(load("res://scripts/levels/ceiling_gridmap.gd"))
 	root.add_child(ceil_gm)
 	ceil_gm.owner = root
-	for c: Vector2i in floor_cells.keys():
-		ceil_gm.set_cell_item(Vector3i(c.x, 0, c.y), CEILING_ID)
-	var hider := Node.new()
-	hider.name = "HideInEditor"
-	hider.set_script(load("res://scripts/editor/hide_in_editor.gd"))
-	ceil_gm.add_child(hider)
-	hider.owner = root
 
 	# --- спавн игрока (Комната A) ---
 	var spawn := Marker3D.new()
