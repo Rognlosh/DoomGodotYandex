@@ -37,8 +37,10 @@ const SCENES := {
 func _ready() -> void:
 	if Engine.is_editor_hint():
 		return            # в редакторе показываем маркеры как есть
-	_spawn_all()
-	visible = false       # в игре маркеры не нужны
+	visible = false       # маркеры в игре не нужны
+	# Отложенно: на момент _ready родитель ещё «занят» (main.gd добавляет уровень),
+	# add_child в него запрещён. На следующем кадре дерево готово — спавним.
+	_spawn_all.call_deferred()
 
 
 func _spawn_all() -> void:
@@ -78,8 +80,8 @@ func _make_spawn(parent: Node, pos: Vector3, cell: Vector3i) -> void:
 	m.name = "PlayerSpawn"
 	parent.add_child(m)
 	# Поворот берём из ориентации клетки (можно крутить маркер при покраске).
-	var basis := get_basis_with_orthogonal_index(get_cell_item_orientation(cell))
-	m.global_transform = Transform3D(basis, pos)
+	var marker_basis := get_basis_with_orthogonal_index(get_cell_item_orientation(cell))
+	m.global_transform = Transform3D(marker_basis, pos)
 
 
 func _make_scene(parent: Node, scene_path: String, pos: Vector3) -> void:
