@@ -7,14 +7,18 @@
 
 [node name="Flyer" unique_id=360318765 instance=ExtResource("1_tg8yd")]
 script = ExtResource("2_7tqhk")
-target_height_offset = 1.0
+hover_height = 5.0
+standoff_range = 9.0
+height_gain = 2.0
 hover_damp = 12.0
+strafe_speed = 2.2
+strafe_interval = 1.4
 projectile_scene = ExtResource("3_r6o5u")
 aim_height = 1.0
 muzzle_forward = 0.6
 move_speed = 5.0
 detection_range = 40.0
-attack_range = 1.8
+attack_range = 20.0
 attack_cooldown = 1.4
 
 [node name="Sprite3D" parent="." index="1" unique_id=913123013]
