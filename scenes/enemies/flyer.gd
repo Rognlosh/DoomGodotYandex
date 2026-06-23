@@ -1,15 +1,25 @@
 class_name EnemyFlyer
 extends EnemyBase
-## Летун: движется к цели в полном 3D (по высоте тоже), не падает.
-## Атака — дальний бой файрболом, если назначен projectile_scene; иначе контактная
-## (как у базы) — задел под будущего контактного летуна («череп» из DOOM).
+## Летун-бомбардир: держится ВЫСОКО над целью и на горизонтальном отступе, зависает
+## и стреляет файрболом; периодически смещается вбок (страйф), не прекращая огонь.
+## Не таранит. Если projectile_scene не задан — контактная атака базы (задел под
+## будущего контактного летуна — «череп» из DOOM).
 
 @export_group("Полёт")
-## На какой высоте цели держаться (центр игрока ~1.0, голова ~1.6).
-@export var target_height_offset: float = 1.0
-## Как быстро гасится вертикальная скорость, когда полётом не управляют
-## (в атаке/простое) — чтобы летун завис, а не уплывал. Ед/с.
+## На какой высоте над целью держаться (бомбардировка сверху), м.
+@export var hover_height: float = 5.0
+## Желаемая горизонтальная дистанция до цели в атаке (отступ — не таранит), м.
+@export var standoff_range: float = 9.0
+## Жёсткость удержания высоты (выше — резче доводит до hover_height).
+@export var height_gain: float = 2.0
+## Как быстро гасится вертикаль, когда полётом не управляют (простой). Ед/с.
 @export var hover_damp: float = 12.0
+
+@export_group("Страйф")
+## Скорость смещения вбок во время стрельбы, м/с.
+@export var strafe_speed: float = 2.2
+## Базовый интервал смены направления страйфа (с разбросом ±40%), с.
+@export var strafe_interval: float = 1.4
 
 @export_group("Дальний бой")
 ## Снаряд-файрбол. Пусто — летун бьёт в упор (контактная атака базы).
@@ -19,24 +29,52 @@ extends EnemyBase
 ## Смещение точки вылета вперёд по направлению на цель, м.
 @export var muzzle_forward: float = 0.6
 
+# Направление страйфа: -1 / 0 (висит) / +1; меняется по таймеру.
+var _strafe_dir: float = 0.0
+var _strafe_timer: float = 0.0
 
-# Летун не падает. Гасим вертикаль только когда движением не управляют
-# (база зовёт _apply_gravity в IDLE/ATTACK). В CHASE _move_towards_target
-# перезадаёт velocity целиком — поэтому здесь её не трогаем, конфликта нет.
+
+# Летун не падает. Гасим вертикаль только когда полётом не управляют (база зовёт
+# _apply_gravity в IDLE). В CHASE/ATTACK velocity задаётся целиком ниже.
 func _apply_gravity(delta: float) -> void:
 	velocity.y = move_toward(velocity.y, 0.0, hover_damp * delta)
 
 
+# Преследование: летим к точке ВЫСОКО над целью, гася сближение у standoff_range.
 func _move_towards_target(_delta: float) -> void:
-	var to_target := _target.global_position \
-		+ Vector3(0.0, target_height_offset, 0.0) - global_position
-	var dir := to_target.normalized()
-	velocity = dir * move_speed
-	_face_dir(dir)  # _face_dir сам сплющивает до XZ — нужен лишь для выбора ракурса
+	var horiz := _flat_to_target()
+	var hdist := horiz.length()
+	var hdir := horiz.normalized() if hdist > 0.01 else Vector3.FORWARD
+	# Сближаемся, пока дальше отступа; внутри — притормаживаем (плавно у границы).
+	var approach := hdir * clampf(hdist - standoff_range, -1.0, 1.0) * move_speed
+	velocity = Vector3(approach.x, _climb_velocity(), approach.z)
+	_face_dir(hdir)
 	move_and_slide()
 
 
-# Атака: файрбол, если назначен снаряд; иначе — контактная атака базы.
+# Движение в атаке: зависание на высоте + удержание отступа + периодический страйф.
+# Не таранит; стрельбу при этом не прекращает (её делает _state_attack базы).
+func _attack_movement(delta: float) -> void:
+	if _target == null:
+		velocity = Vector3.ZERO
+		return
+	var horiz := _flat_to_target()
+	var hdist := horiz.length()
+	var hdir := horiz.normalized() if hdist > 0.01 else Vector3.FORWARD
+	# Мягко держим горизонтальный отступ: близко → назад, далеко → вперёд.
+	var move := hdir * clampf(hdist - standoff_range, -1.0, 1.0) * move_speed
+	# Страйф вбок (перпендикуляр в плоскости XZ); направление меняется по таймеру,
+	# иногда 0 — просто висит.
+	_strafe_timer -= delta
+	if _strafe_timer <= 0.0:
+		_strafe_timer = strafe_interval * randf_range(0.6, 1.4)
+		_strafe_dir = [-1.0, 0.0, 1.0].pick_random()
+	var side := Vector3(hdir.z, 0.0, -hdir.x)
+	move += side * _strafe_dir * strafe_speed
+	velocity = Vector3(move.x, _climb_velocity(), move.z)
+
+
+# Файрбол, если назначен снаряд; иначе — контактная атака базы.
 func _perform_attack() -> void:
 	if projectile_scene == null:
 		super._perform_attack()
@@ -55,8 +93,23 @@ func _perform_attack() -> void:
 
 
 func _on_death() -> void:
-	super._on_death()  # стандартная смерть базы (стоп, коллизия off, анимация, таймер трупа)
-	_drop_corpse_to_floor()
+	super._on_death()  # стандартная смерть базы (+ запуск трупа, если убит взрывом)
+	if not _launched:  # запущенный взрывом труп падает сам — на пол не тащим
+		_drop_corpse_to_floor()
+
+
+# --- Вспомогательное ---
+
+# Горизонтальный вектор от летуна к цели (XZ, без высоты).
+func _flat_to_target() -> Vector3:
+	var d := _target.global_position - global_position
+	return Vector3(d.x, 0.0, d.z)
+
+
+# Вертикальная скорость для удержания hover_height над целью.
+func _climb_velocity() -> float:
+	var desired_y := _target.global_position.y + hover_height
+	return clampf((desired_y - global_position.y) * height_gain, -move_speed, move_speed)
 
 
 # Мёртвый летун не падает сам (физика на State.DEAD заглушена) — роняем труп

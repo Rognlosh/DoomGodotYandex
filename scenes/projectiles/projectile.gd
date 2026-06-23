@@ -20,6 +20,12 @@ extends Node3D
 ## Множитель урона на краю радиуса (1 — без затухания; 0 — до нуля у края).
 @export_range(0.0, 1.0) var splash_min_factor: float = 0.25
 
+@export_group("Отброс (только при splash_radius > 0)")
+## Сила отброса в центре взрыва (импульс, ед/с). 0 — без отброса. Затухает к краю.
+@export var knockback_force: float = 14.0
+## Доля силы вверх — даёт дугу подброса трупов.
+@export var knockback_up: float = 0.5
+
 @export_group("Визуал")
 ## Цвет снаряда (красит процедурный плейсхолдер-спрайт через modulate).
 @export var color: Color = Color(1.0, 0.5, 0.15)
@@ -116,11 +122,17 @@ func _apply_splash(center: Vector3) -> void:
 		if col == null or seen.has(col) or not col.has_method("take_damage"):
 			continue
 		seen[col] = true
-		var factor := 1.0
-		if col is Node3D:
-			var d := (col as Node3D).global_position.distance_to(center)
-			var t := clampf(1.0 - d / splash_radius, 0.0, 1.0)
-			factor = lerpf(splash_min_factor, 1.0, t)
+		var here: Vector3 = (col as Node3D).global_position if col is Node3D else center
+		var dist := here.distance_to(center)
+		var t := clampf(1.0 - dist / splash_radius, 0.0, 1.0)
+		var factor := lerpf(splash_min_factor, 1.0, t)
+		# Отброс ДО урона: если тело умрёт от этого взрыва, оно успеет получить
+		# импульс и улетит трупом (apply_knockback — конвенция, есть только у врагов).
+		if knockback_force > 0.0 and col.has_method("apply_knockback"):
+			var away := here - center
+			away.y = 0.0
+			var dir := away.normalized() if away.length() > 0.05 else Vector3.ZERO
+			col.apply_knockback((dir + Vector3.UP * knockback_up) * knockback_force * factor)
 		col.take_damage(damage * factor)
 
 
