@@ -141,21 +141,31 @@ func _add_slider(column: VBoxContainer, item: Dictionary) -> HSlider:
 	row.add_child(slider)
 	column.add_child(row)
 
-	# Читалка значения — процент заполнения диапазона (универсально для любого
-	# ползунка: громкость 0..1 даёт 0..100%, чувствительность — % своего диапазона).
-	var update_caption := func(v: float) -> void:
-		var pct := 0
-		if hi > lo:
-			pct = int(round((v - lo) / (hi - lo) * 100.0))
-		caption.text = "%s: %d%%" % [label_text, pct]
-	update_caption.call(slider.value)
-
-	# Сигнал подключаем ПОСЛЕ установки value — чтобы инициализация не слала событие.
-	slider.value_changed.connect(func(v: float) -> void:
-		update_caption.call(v)
-		value_changed.emit(id, v)
+	# Читалку и обработчик держим именованными методами (без многострочных лямбд —
+	# их парсер капризнее; bind() надёжнее). Сигнал value_changed отдаёт value
+	# первым аргументом, остальное добавляет bind().
+	_update_slider_caption(caption, label_text, lo, hi, slider.value)
+	slider.value_changed.connect(
+		_on_slider_changed.bind(id, caption, label_text, lo, hi)
 	)
 	return slider
+
+
+# Ползунок сдвинут: обновить подпись и пробросить значение наверх.
+func _on_slider_changed(value: float, id: StringName, caption: Label,
+		label_text: String, lo: float, hi: float) -> void:
+	_update_slider_caption(caption, label_text, lo, hi, value)
+	value_changed.emit(id, value)
+
+
+# Подпись ползунка — процент заполнения диапазона (универсально для любого ползунка:
+# громкость 0..1 даёт 0..100%, чувствительность — % своего диапазона).
+func _update_slider_caption(caption: Label, label_text: String,
+		lo: float, hi: float, value: float) -> void:
+	var pct := 0
+	if hi > lo:
+		pct = int(round((value - lo) / (hi - lo) * 100.0))
+	caption.text = "%s: %d%%" % [label_text, pct]
 
 
 func _spacer(height: float) -> Control:
