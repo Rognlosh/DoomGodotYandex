@@ -186,7 +186,8 @@ func _open_overlay(title: String, body: String, items: Array, dim: float,
 		back_id: StringName, on_selected: Callable) -> void:
 	# Текущий верх деактивируем — Esc должен уходить только новому верхнему.
 	if not _overlays.is_empty():
-		_overlays.back().set_active(false)
+		var current_top: MenuScreen = _overlays.back()
+		current_top.set_active(false)
 
 	var m := _make_menu(title, body, items, dim, back_id, _BASE_LAYER + _overlays.size() + 1)
 	m.selected.connect(on_selected)
@@ -199,10 +200,11 @@ func _open_overlay(title: String, body: String, items: Array, dim: float,
 func _close_top_overlay() -> void:
 	if _overlays.is_empty():
 		return
-	var top := _overlays.pop_back()
+	var top: MenuScreen = _overlays.pop_back()
 	top.queue_free()
 	if not _overlays.is_empty():
-		_overlays.back().set_active(true)
+		var below: MenuScreen = _overlays.back()
+		below.set_active(true)
 	_refresh_mode()
 
 
