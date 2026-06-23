@@ -71,6 +71,10 @@ func start_game() -> void:
 	_clear_session()
 
 	_session = SESSION_SCENE.instantiate() as Node3D
+	# Роутер — ALWAYS (живёт на паузе ради меню). Без явного PAUSABLE сессия
+	# унаследовала бы ALWAYS от роутера и НЕ вставала бы на паузу — тогда игрок
+	# продолжал бы ловить ввод и перехватывал клики по кнопкам меню.
+	_session.process_mode = Node.PROCESS_MODE_PAUSABLE
 	# Сигналы сессии наверх. Подключаем по имени (строкой) — у роутера нет
 	# статического знания о сигналах чужого скрипта, connect() это снимает.
 	_session.connect(&"player_died", _on_player_died)
