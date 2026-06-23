@@ -19,6 +19,9 @@ const MENU_SCENE: PackedScene = preload("res://scenes/ui/menus/menu_screen.tscn"
 const _BASE_LAYER: int = 20
 # Текст-заглушка для разделов, которые приедут с интеграцией Yandex SDK.
 const _YANDEX_STUB: String = "Появится с интеграцией Yandex Games SDK (Этап 4)."
+# Диапазон ползунка чувствительности мыши (радиан поворота на пиксель).
+const _SENS_MIN: float = 0.0005
+const _SENS_MAX: float = 0.01
 
 # Текущая игровая сессия (Node3D "Main") или null, если мы в главном меню.
 var _session: Node3D = null
@@ -167,7 +170,45 @@ func _on_overlay_back(_id: StringName) -> void:
 # --------------------------------------------------------------------------
 
 func _open_settings() -> void:
-	_open_stub("Настройки", "Раздел в разработке.")
+	# Ползунки берут текущее из синглтона Settings; правки летят обратно ему
+	# через value_changed (применяются на лету, дебаунс-запись на диск — в Settings).
+	_open_overlay(
+		"Настройки",
+		"",
+		[
+			{"type": &"slider", "id": &"vol_master", "label": "Громкость (общая)",
+				"min": 0.0, "max": 1.0, "step": 0.05, "value": Settings.master_volume},
+			{"type": &"slider", "id": &"vol_sfx", "label": "Громкость боя",
+				"min": 0.0, "max": 1.0, "step": 0.05, "value": Settings.sfx_volume},
+			{"type": &"slider", "id": &"vol_ambient", "label": "Громкость фона",
+				"min": 0.0, "max": 1.0, "step": 0.05, "value": Settings.ambient_volume},
+			{"type": &"slider", "id": &"sens", "label": "Чувствительность мыши",
+				"min": _SENS_MIN, "max": _SENS_MAX, "step": 0.0005,
+				"value": Settings.mouse_sensitivity},
+			{"id": &"back", "label": "Назад"},
+		],
+		0.92,           # почти непрозрачно — это отдельный экран
+		&"back",        # Esc = назад
+		_on_settings_selected,
+		_on_settings_value_changed
+	)
+
+
+func _on_settings_selected(id: StringName) -> void:
+	if id == &"back":
+		_close_top_overlay()
+
+
+func _on_settings_value_changed(id: StringName, value: float) -> void:
+	match id:
+		&"vol_master":
+			Settings.set_master_volume(value)
+		&"vol_sfx":
+			Settings.set_sfx_volume(value)
+		&"vol_ambient":
+			Settings.set_ambient_volume(value)
+		&"sens":
+			Settings.set_mouse_sensitivity(value)
 
 
 func _open_stub(title: String, body: String) -> void:
@@ -186,8 +227,9 @@ func _open_stub(title: String, body: String) -> void:
 # --------------------------------------------------------------------------
 
 # Открыть оверлей поверх текущего экрана. Esc/клики идут только верхнему.
+# on_changed (опц.) — обработчик value_changed ползунков (нужен экрану настроек).
 func _open_overlay(title: String, body: String, items: Array, dim: float,
-		back_id: StringName, on_selected: Callable) -> void:
+		back_id: StringName, on_selected: Callable, on_changed: Callable = Callable()) -> void:
 	# Текущий верх деактивируем — Esc должен уходить только новому верхнему.
 	if not _overlays.is_empty():
 		var current_top: MenuScreen = _overlays.back()
@@ -195,6 +237,8 @@ func _open_overlay(title: String, body: String, items: Array, dim: float,
 
 	var m := _make_menu(title, body, items, dim, back_id, _BASE_LAYER + _overlays.size() + 1)
 	m.selected.connect(on_selected)
+	if on_changed.is_valid():
+		m.value_changed.connect(on_changed)
 	_overlays.push_back(m)
 	add_child(m)
 	_refresh_mode()

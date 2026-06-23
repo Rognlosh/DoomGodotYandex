@@ -51,6 +51,16 @@ func _ready() -> void:
 	# только после клика пользователя — поэтому захватываем по клику мыши.
 	Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
 
+	# Чувствительность — из глобальных настроек (а не только из @export):
+	# берём текущее значение и слушаем изменения, чтобы правка ползунка в паузе
+	# применялась к живому игроку сразу. @export остаётся дефолтом-фолбэком.
+	mouse_sensitivity = Settings.mouse_sensitivity
+	Settings.mouse_sensitivity_changed.connect(_on_sensitivity_changed)
+
+
+func _on_sensitivity_changed(value: float) -> void:
+	mouse_sensitivity = value
+
 
 # Конвенция урона: тело принимает урон и делегирует в компонент (как у врага).
 # Реакцию на died/health_changed решают снаружи (main → пауза+оверлей, HUD → бар).

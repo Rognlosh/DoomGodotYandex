@@ -8,8 +8,11 @@ extends CanvasLayer
 ## Работает на паузе (PROCESS_MODE_ALWAYS): когда роутер ставит дерево на паузу
 ## ради оверлея, само меню должно остаться живым и кликабельным.
 
-## Игрок выбрал пункт. Несёт id пункта (или back_id при Esc). Роутер разбирает.
+## Игрок выбрал пункт-кнопку. Несёт id пункта (или back_id при Esc). Роутер разбирает.
 signal selected(id: StringName)
+## Игрок подвинул ползунок. Несёт id пункта и новое значение. Роутер разбирает
+## (параллельно selected — кнопки шлют одно, ползунки другое).
+signal value_changed(id: StringName, value: float)
 
 # --- Конфиг: роутер задаёт эти поля до add_child, _ready их читает ---
 ## Заголовок вверху. Пусто — не рисуется.
@@ -84,22 +87,75 @@ func _build() -> void:
 		column.add_child(body)
 		column.add_child(_spacer(16))
 
-	var first_button: Button = null
+	# Каждый пункт — кнопка (по умолчанию) или ползунок (type == &"slider").
+	# Фокус ставим на первый фокусируемый элемент — навигация стрелками/Enter.
+	var first_focus: Control = null
 	for item: Dictionary in items:
-		var button := Button.new()
-		button.text = String(item["label"])
-		button.custom_minimum_size = Vector2(280.0, 46.0)
-		button.add_theme_font_size_override("font_size", 24)
-		# Захват id в лямбду: каждая кнопка эмитит свой пункт.
-		var id: StringName = item["id"]
-		button.pressed.connect(func() -> void: selected.emit(id))
-		column.add_child(button)
-		if first_button == null:
-			first_button = button
+		var focusable: Control
+		if StringName(item.get("type", &"button")) == &"slider":
+			focusable = _add_slider(column, item)
+		else:
+			focusable = _add_button(column, item)
+		if first_focus == null:
+			first_focus = focusable
 
-	# Фокус на первую кнопку — навигация стрелками/Enter с клавиатуры.
-	if first_button != null:
-		first_button.grab_focus()
+	if first_focus != null:
+		first_focus.grab_focus()
+
+
+# Пункт-кнопка: эмитит свой id по нажатию.
+func _add_button(column: VBoxContainer, item: Dictionary) -> Button:
+	var button := Button.new()
+	button.text = String(item["label"])
+	button.custom_minimum_size = Vector2(280.0, 46.0)
+	button.add_theme_font_size_override("font_size", 24)
+	# Захват id в лямбду: каждая кнопка эмитит свой пункт.
+	var id: StringName = item["id"]
+	button.pressed.connect(func() -> void: selected.emit(id))
+	column.add_child(button)
+	return button
+
+
+# Пункт-ползунок: подпись с процентом заполнения + HSlider, эмитит value_changed.
+# Конфиг пункта: {id, label, min, max, value, step}.
+func _add_slider(column: VBoxContainer, item: Dictionary) -> HSlider:
+	var id: StringName = item["id"]
+	var label_text := String(item["label"])
+	var lo := float(item["min"])
+	var hi := float(item["max"])
+
+	var row := VBoxContainer.new()
+	row.add_theme_constant_override("separation", 4)
+
+	var caption := Label.new()
+	caption.add_theme_font_size_override("font_size", 20)
+	caption.add_theme_color_override("font_color", _TEXT_COLOR)
+	row.add_child(caption)
+
+	var slider := HSlider.new()
+	slider.custom_minimum_size = Vector2(320.0, 0.0)
+	slider.min_value = lo
+	slider.max_value = hi
+	slider.step = float(item.get("step", 0.01))
+	slider.value = float(item["value"])
+	row.add_child(slider)
+	column.add_child(row)
+
+	# Читалка значения — процент заполнения диапазона (универсально для любого
+	# ползунка: громкость 0..1 даёт 0..100%, чувствительность — % своего диапазона).
+	var update_caption := func(v: float) -> void:
+		var pct := 0
+		if hi > lo:
+			pct = int(round((v - lo) / (hi - lo) * 100.0))
+		caption.text = "%s: %d%%" % [label_text, pct]
+	update_caption.call(slider.value)
+
+	# Сигнал подключаем ПОСЛЕ установки value — чтобы инициализация не слала событие.
+	slider.value_changed.connect(func(v: float) -> void:
+		update_caption.call(v)
+		value_changed.emit(id, v)
+	)
+	return slider
 
 
 func _spacer(height: float) -> Control:
