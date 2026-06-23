@@ -27,6 +27,11 @@ const LEVEL_PATH := "res://scenes/levels/level_doom_01.tscn"
 # id предметов в MeshLibrary
 const FLOOR_ID := 0
 const WALL_ID := 1
+const CEILING_ID := 2
+
+# вертикальные смещения плит внутри клетки (от центра меша)
+const FLOOR_OFF := -CELL * 0.5 + TH * 0.5   # плита пола у низа клетки
+const CEIL_OFF := CELL * 0.5 - TH * 0.5     # плита потолка у верха клетки
 
 
 func _run() -> void:
@@ -74,17 +79,12 @@ func _slab_arrays(size: Vector3, y_offset: float) -> Array:
 	return arr
 
 
-# Пол+потолок одним мешом (2 поверхности → 2 материала).
-func _build_floor_mesh(mat_floor: StandardMaterial3D, mat_ceil: StandardMaterial3D) -> ArrayMesh:
+# Плита (пол или потолок) — один меш-поверхность с материалом.
+func _slab_mesh(mat: StandardMaterial3D, y_offset: float) -> ArrayMesh:
 	var am := ArrayMesh.new()
-	# плита пола у низа клетки
 	am.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES,
-		_slab_arrays(Vector3(CELL, TH, CELL), -CELL * 0.5 + TH * 0.5))
-	am.surface_set_material(0, mat_floor)
-	# плита потолка у верха клетки
-	am.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES,
-		_slab_arrays(Vector3(CELL, TH, CELL), CELL * 0.5 - TH * 0.5))
-	am.surface_set_material(1, mat_ceil)
+		_slab_arrays(Vector3(CELL, TH, CELL), y_offset))
+	am.surface_set_material(0, mat)
 	return am
 
 
@@ -103,18 +103,13 @@ func _build_library() -> MeshLibrary:
 	var mat_floor := _make_material(TEX_FLOOR)
 	var mat_ceil := _make_material(TEX_CEIL)
 
-	# floor (id 0): пол + потолок, 2 коллизии-плиты
+	# floor (id 0): плита пола снизу клетки (потолок вынесен в отдельный предмет)
 	lib.create_item(FLOOR_ID)
 	lib.set_item_name(FLOOR_ID, "floor")
-	lib.set_item_mesh(FLOOR_ID, _build_floor_mesh(mat_floor, mat_ceil))
+	lib.set_item_mesh(FLOOR_ID, _slab_mesh(mat_floor, FLOOR_OFF))
 	var floor_shape := BoxShape3D.new()
 	floor_shape.size = Vector3(CELL, TH, CELL)
-	var ceil_shape := BoxShape3D.new()
-	ceil_shape.size = Vector3(CELL, TH, CELL)
-	lib.set_item_shapes(FLOOR_ID, [
-		floor_shape, Transform3D(Basis(), Vector3(0, -CELL * 0.5 + TH * 0.5, 0)),
-		ceil_shape, Transform3D(Basis(), Vector3(0, CELL * 0.5 - TH * 0.5, 0)),
-	])
+	lib.set_item_shapes(FLOOR_ID, [floor_shape, Transform3D(Basis(), Vector3(0, FLOOR_OFF, 0))])
 
 	# wall (id 1): сплошной куб + коллизия-куб
 	lib.create_item(WALL_ID)
@@ -123,6 +118,15 @@ func _build_library() -> MeshLibrary:
 	var wall_shape := BoxShape3D.new()
 	wall_shape.size = Vector3(CELL, CELL, CELL)
 	lib.set_item_shapes(WALL_ID, [wall_shape, Transform3D.IDENTITY])
+
+	# ceiling (id 2): плита потолка сверху клетки. Рисуется на отдельном GridMap,
+	# который прячется в редакторе (чтобы не мешал расстановке сверху).
+	lib.create_item(CEILING_ID)
+	lib.set_item_name(CEILING_ID, "ceiling")
+	lib.set_item_mesh(CEILING_ID, _slab_mesh(mat_ceil, CEIL_OFF))
+	var ceil_shape := BoxShape3D.new()
+	ceil_shape.size = Vector3(CELL, TH, CELL)
+	lib.set_item_shapes(CEILING_ID, [ceil_shape, Transform3D(Basis(), Vector3(0, CEIL_OFF, 0))])
 
 	return lib
 
@@ -192,6 +196,27 @@ func _build_level(lib: MeshLibrary) -> void:
 		gm.set_cell_item(Vector3i(c.x, 0, c.y), FLOOR_ID)
 	for c: Vector2i in wall_cells.keys():
 		gm.set_cell_item(Vector3i(c.x, 0, c.y), WALL_ID)
+
+	# --- Потолок отдельным GridMap (виден только в игре) ---
+	# В редакторе прячется компонентом HideInEditor — сверху всё видно,
+	# предметы цепляются за пол, а не за потолок.
+	var ceil_gm := GridMap.new()
+	ceil_gm.name = "Ceiling"
+	ceil_gm.cell_size = Vector3(CELL, CELL, CELL)
+	ceil_gm.cell_center_x = true
+	ceil_gm.cell_center_y = false
+	ceil_gm.cell_center_z = true
+	ceil_gm.mesh_library = lib
+	ceil_gm.position = Vector3(0, LIFT, 0)
+	root.add_child(ceil_gm)
+	ceil_gm.owner = root
+	for c: Vector2i in floor_cells.keys():
+		ceil_gm.set_cell_item(Vector3i(c.x, 0, c.y), CEILING_ID)
+	var hider := Node.new()
+	hider.name = "HideInEditor"
+	hider.set_script(load("res://scripts/editor/hide_in_editor.gd"))
+	ceil_gm.add_child(hider)
+	hider.owner = root
 
 	# --- спавн игрока (Комната A) ---
 	var spawn := Marker3D.new()
