@@ -158,15 +158,15 @@ func _advance_frame(delta: float) -> void:
 
 
 func _update_cell() -> void:
-	var col: int = 0
-	var flip: bool = false
 	if _current.directional:
+		# Направленная: столбец = ракурс, строка = row_start + номер кадра.
 		var pick := _pick_direction()
-		col = pick.x
-		flip = pick.y == 1
-	# frame — единый индекс ячейки: строка * ширина + столбец.
-	frame = (_current.row_start + _frame_index) * columns + col
-	flip_h = flip
+		frame = (_current.row_start + _frame_index) * columns + pick.x
+		flip_h = pick.y == 1
+	else:
+		# Ненаправленная (смерть): один ряд row_start, кадры идут по столбцам.
+		frame = _current.row_start * columns + _frame_index
+		flip_h = false
 
 
 # Vector2i(столбец, flip:0/1) по углу «взгляд врага vs камера».
@@ -196,8 +196,11 @@ func _pick_direction() -> Vector2i:
 func _compute_total_rows() -> int:
 	var rows: int = 1
 	for a in animations:
-		if a != null:
-			rows = maxi(rows, a.row_start + a.frame_count)
+		if a == null:
+			continue
+		# Направленная тянется вниз на frame_count строк; ненаправленная — 1 ряд.
+		var span: int = a.frame_count if a.directional else 1
+		rows = maxi(rows, a.row_start + span)
 	return rows
 
 
