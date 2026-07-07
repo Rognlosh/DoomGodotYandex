@@ -11,7 +11,10 @@
 [ext_resource type="Script" uid="uid://c36bfbcvp1lnb" path="res://scenes/player/rocket_launcher.gd" id="5_h17s1"]
 [ext_resource type="Script" uid="uid://bguw54o77pkla" path="res://scripts/resources/ammo_type.gd" id="6_0owmy"]
 [ext_resource type="PackedScene" uid="uid://d2kolxkdyheys" path="res://scenes/projectiles/rocket.tscn" id="6_je7p5"]
+[ext_resource type="Texture2D" uid="uid://p8w458rxxcfr" path="res://assets/sprites/weapon_dislike.png" id="7_gx1jg"]
 [ext_resource type="Script" uid="uid://cjjdm5ul7gm17" path="res://scripts/components/armor_component.gd" id="8_qek5x"]
+[ext_resource type="Texture2D" uid="uid://bqay6iifvgf68" path="res://assets/sprites/weapon_captcha.png" id="8_ugbui"]
+[ext_resource type="Texture2D" uid="uid://dgah71mnyo4im" path="res://assets/sprites/weapon_spamfilter.png" id="9_fcs02"]
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_dovo2"]
 radius = 0.4
@@ -88,6 +91,9 @@ grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("2_dovo2")
 slot = 2
+sprite = ExtResource("7_gx1jg")
+sprite_frames = 2
+fire_frame_time = 0.08
 
 [node name="Shotgun" type="Control" parent="WeaponLayer/Weapons" unique_id=2027224495]
 layout_mode = 3
@@ -102,6 +108,10 @@ damage = 8.0
 pellets = 7
 spread_degrees = 5.0
 ammo_type = &"shells"
+sprite = ExtResource("8_ugbui")
+sprite_frames = 2
+fire_frame_time = 0.09
+horizontal_shift = -0.09999999999999998
 body_size = Vector2(110, 56)
 barrel_size = Vector2(40, 54)
 
@@ -118,6 +128,8 @@ damage = 8.0
 fire_mode = 1
 fire_cooldown = 0.1
 spread_degrees = 2.0
+sprite = ExtResource("9_fcs02")
+sprite_frames = 2
 body_size = Vector2(90, 64)
 barrel_size = Vector2(22, 90)
 
