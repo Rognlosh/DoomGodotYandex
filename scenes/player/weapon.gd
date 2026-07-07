@@ -63,6 +63,9 @@ enum FireMode { SEMI, AUTO }
 ## Доля кадра, спрятанная ЗА нижним краем экрана. КОНТРАКТ с будущей HUD-панелью:
 ## панель займёт нижние ~12% экрана и накроет этот запас (руки «растут» из-за неё).
 @export_range(0.0, 0.5) var bottom_overhang: float = 0.10
+## Сдвиг кадра от центра экрана, в долях ширины кадра (вправо — положительный).
+## Классика DOOM: ближний бой и некоторые стволы сидят правее центра.
+@export_range(-1.0, 1.0) var horizontal_shift: float = 0.0
 
 @export_group("Покачивание (bob)")
 ## Амплитуда покачивания по X/Y, в долях высоты кадра на экране.
@@ -253,19 +256,30 @@ func _bob_offset(frame_height_px: float) -> Vector2:
 			* bob_amplitude * frame_height_px * _bob_strength
 
 
-# Арт-режим: кадр стрипа по нижнему центру, с запасом за краем и покачиванием.
-# Вспышку кружками не рисуем — кадры выстрела несут её в самом арте.
-func _draw_sprite() -> void:
+# Экранный прямоугольник текущего кадра: нижний центр + horizontal_shift,
+# запас за краем (bottom_overhang) и покачивание. Общий для базы и наследников.
+func _frame_dest_rect() -> Rect2:
 	var frame_w: float = float(sprite.get_width()) / float(sprite_frames)
 	var frame_h: float = float(sprite.get_height())
 	var dest_h: float = size.y * screen_height_ratio
 	var dest_w: float = frame_w * (dest_h / frame_h)
 	var bob: Vector2 = _bob_offset(dest_h)
-	var pos := Vector2(
-			size.x * 0.5 - dest_w * 0.5 + bob.x,
-			size.y - dest_h * (1.0 - bottom_overhang) + bob.y)
-	draw_texture_rect_region(sprite, Rect2(pos, Vector2(dest_w, dest_h)),
-			Rect2(_frame * frame_w, 0.0, frame_w, frame_h))
+	return Rect2(Vector2(
+			size.x * 0.5 - dest_w * 0.5 + dest_w * horizontal_shift + bob.x,
+			size.y - dest_h * (1.0 - bottom_overhang) + bob.y),
+			Vector2(dest_w, dest_h))
+
+
+# Регион текущего кадра в текстуре-стрипе.
+func _frame_src_rect() -> Rect2:
+	var frame_w: float = float(sprite.get_width()) / float(sprite_frames)
+	return Rect2(_frame * frame_w, 0.0, frame_w, float(sprite.get_height()))
+
+
+# Арт-режим: кадр стрипа по нижнему центру, с запасом за краем и покачиванием.
+# Вспышку кружками не рисуем — кадры выстрела несут её в самом арте.
+func _draw_sprite() -> void:
+	draw_texture_rect_region(sprite, _frame_dest_rect(), _frame_src_rect())
 
 
 # Плейсхолдер до назначения арта: прежние прямоугольники + вспышка, теперь с bob.

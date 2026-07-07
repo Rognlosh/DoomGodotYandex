@@ -74,18 +74,11 @@ func _draw_sprite() -> void:
 	if absf(angle) < 0.0001:
 		super._draw_sprite()  # покой — обычная отрисовка базы (с бобом)
 		return
-	var frame_w: float = float(sprite.get_width()) / float(sprite_frames)
-	var frame_h: float = float(sprite.get_height())
-	var dest_h: float = size.y * screen_height_ratio
-	var dest_w: float = frame_w * (dest_h / frame_h)
-	var bob: Vector2 = _bob_offset(dest_h)
-	var pos := Vector2(
-			size.x * 0.5 - dest_w * 0.5 + bob.x,
-			size.y - dest_h * (1.0 - bottom_overhang) + bob.y)
+	var dest: Rect2 = _frame_dest_rect()  # позиция/размер — общий расчёт базы
 	# draw_set_transform: система координат последующих draw-вызовов
 	# переносится в pivot и поворачивается — рисуем кадр ОТНОСИТЕЛЬНО кулака.
-	var pivot: Vector2 = pos + Vector2(dest_w, dest_h) * pivot_ratio
+	var pivot: Vector2 = dest.position + dest.size * pivot_ratio
 	draw_set_transform(pivot, angle, Vector2.ONE)
-	draw_texture_rect_region(sprite, Rect2(pos - pivot, Vector2(dest_w, dest_h)),
-			Rect2(_frame * frame_w, 0.0, frame_w, frame_h))
+	draw_texture_rect_region(sprite, Rect2(dest.position - pivot, dest.size),
+			_frame_src_rect())
 	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
