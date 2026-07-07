@@ -2,7 +2,8 @@
 """Пакер оружейного спрайта (ChatGPT-лист 2x2 -> горизонтальный стрип 4 кадров).
 
 Использование:
-    python3 tools/pack_weapon_strip.py <лист>.png <выход>.png
+    python3 tools/pack_weapon_strip.py <лист 2x2>.png <выход>.png
+    python3 tools/pack_weapon_strip.py --single <кадр>.png <выход>.png [высота=128]
 
 Вход: один квадратный лист на белом фоне, сетка 2x2:
     TL = покой (idle) | TR = начало выстрела
@@ -48,6 +49,20 @@ def key_and_crop(quad):
     return Image.fromarray(out[ys.min():ys.max() + 1, xs.min():xs.max() + 1], "RGBA")
 
 
+def pack_single(in_path, out_path, height=128):
+    """Одиночный кадр (ближний бой): кейинг фона + обрезка + вписывание по высоте.
+    Выход — «стрип из 1 кадра», в weapon.gd назначается со sprite_frames = 1."""
+    spr = key_and_crop(Image.open(in_path))
+    scale = height / spr.height
+    spr = spr.resize((max(1, round(spr.width * scale)), height), Image.LANCZOS)
+    arr = np.array(spr)
+    arr[:, :, 3] = np.where(arr[:, :, 3] >= 128, 255, 0).astype(np.uint8)
+    out = Image.fromarray(arr, "RGBA").quantize(
+        colors=48, method=Image.FASTOCTREE, dither=Image.NONE)
+    out.save(out_path, optimize=True)
+    print("saved:", out_path, spr.size)
+
+
 def main(sheet_path, out_path):
     sprites = [key_and_crop(q) for q in quadrants(Image.open(sheet_path))]
     # Единый масштаб: самый широкий/высокий кадр вписывается в клетку.
@@ -72,4 +87,8 @@ def main(sheet_path, out_path):
 
 
 if __name__ == "__main__":
-    main(sys.argv[1], sys.argv[2])
+    if sys.argv[1] == "--single":
+        pack_single(sys.argv[2], sys.argv[3],
+                    int(sys.argv[4]) if len(sys.argv) > 4 else 128)
+    else:
+        main(sys.argv[1], sys.argv[2])
