@@ -15,6 +15,7 @@
 [ext_resource type="Script" uid="uid://cjjdm5ul7gm17" path="res://scripts/components/armor_component.gd" id="8_qek5x"]
 [ext_resource type="Texture2D" uid="uid://bqay6iifvgf68" path="res://assets/sprites/weapon_captcha.png" id="8_ugbui"]
 [ext_resource type="Texture2D" uid="uid://dgah71mnyo4im" path="res://assets/sprites/weapon_spamfilter.png" id="9_fcs02"]
+[ext_resource type="Texture2D" uid="uid://c275731pb70re" path="res://assets/sprites/weapon_unsub.png" id="12_myrg7"]
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_dovo2"]
 radius = 0.4
@@ -146,6 +147,9 @@ slot = 5
 damage = 60.0
 fire_cooldown = 0.8
 ammo_type = &"rockets"
+sprite = ExtResource("12_myrg7")
+sprite_frames = 2
+fire_frame_time = 0.09
 
 [node name="HealthComponent" type="Node" parent="." unique_id=1053890916]
 script = ExtResource("4_lvxji")
