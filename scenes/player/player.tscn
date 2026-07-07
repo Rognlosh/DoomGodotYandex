@@ -4,8 +4,10 @@
 [ext_resource type="Script" uid="uid://bkwpd6vnsn8hq" path="res://scenes/player/weapon.gd" id="2_dovo2"]
 [ext_resource type="Script" uid="uid://c7h43hs6k0eox" path="res://scenes/player/weapon_manager.gd" id="3_0owmy"]
 [ext_resource type="Script" uid="uid://bp5jo1rxsxdxc" path="res://scripts/ui/crosshair.gd" id="3_gmlin"]
+[ext_resource type="Script" uid="uid://r2piafbvmkp7" path="res://scenes/player/melee_weapon.gd" id="4_fm80t"]
 [ext_resource type="Script" uid="uid://3xtjeljrqxo1" path="res://scripts/components/health_component.gd" id="4_lvxji"]
 [ext_resource type="Script" uid="uid://fe6xb17afane" path="res://scripts/components/ammo_component.gd" id="5_75vfm"]
+[ext_resource type="Texture2D" uid="uid://dge46c3gosug4" path="res://assets/sprites/weapon_banhammer.png" id="5_gx1jg"]
 [ext_resource type="Script" uid="uid://c36bfbcvp1lnb" path="res://scenes/player/rocket_launcher.gd" id="5_h17s1"]
 [ext_resource type="Script" uid="uid://bguw54o77pkla" path="res://scripts/resources/ammo_type.gd" id="6_0owmy"]
 [ext_resource type="PackedScene" uid="uid://d2kolxkdyheys" path="res://scenes/projectiles/rocket.tscn" id="6_je7p5"]
@@ -59,6 +61,22 @@ script = ExtResource("3_gmlin")
 
 [node name="Weapons" type="Node" parent="WeaponLayer" unique_id=276871274]
 script = ExtResource("3_0owmy")
+
+[node name="BanHammer" type="Control" parent="WeaponLayer/Weapons" unique_id=60838163]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("4_fm80t")
+slot = 1
+damage = 45.0
+fire_cooldown = 0.6
+max_range = 2.5
+uses_ammo = false
+sprite = ExtResource("5_gx1jg")
+screen_height_ratio = 0.5
 
 [node name="Pistol" type="Control" parent="WeaponLayer/Weapons" unique_id=1035936759]
 layout_mode = 3
