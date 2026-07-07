@@ -22,6 +22,7 @@ const _LIBRARY := {
 	&"player_death": "sfx_player_death.ogg",
 	&"rocket": "sfx_rocket.ogg",          # запуск ракеты (слот 5)
 	&"explosion": "sfx_explosion.ogg",    # взрыв снаряда
+	&"melee": "sfx_melee.ogg",            # замах/удар бан-хаммера (слот 1)
 }
 const _AMBIENT := "amb_level.ogg"
 
@@ -37,7 +38,7 @@ const _VOLUME := {
 const _DEDUPE := {&"impact_wall": true, &"impact_flesh": true}
 
 # Слот оружия -> id выстрела (данные, не код: новый ствол — строчка тут).
-const _WEAPON_BY_SLOT := {2: &"pistol", 3: &"shotgun", 4: &"machinegun", 5: &"rocket"}
+const _WEAPON_BY_SLOT := {1: &"melee", 2: &"pistol", 3: &"shotgun", 4: &"machinegun", 5: &"rocket"}
 
 var _streams: Dictionary = {}
 var _pool: SoundPool

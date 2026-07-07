@@ -50,6 +50,31 @@ enum FireMode { SEMI, AUTO }
 # Звук выстрела/«пусто» — централизован в CombatAudio (по слоту ствола),
 # найдётся по группе. Реальные SFX — заменой OGG, не правкой сцен оружия.
 
+@export_group("Спрайт")
+## Стрип кадров оружия (слева направо): кадр 0 — покой, дальше — выстрел.
+## null — рисуется старый прямоугольный плейсхолдер (арт ещё не назначен).
+@export var sprite: Texture2D
+## Всего кадров в стрипе (включая кадр покоя).
+@export var sprite_frames: int = 4
+## Длительность одного кадра анимации выстрела, с.
+@export var fire_frame_time: float = 0.06
+## Высота кадра на экране, в долях высоты вьюпорта.
+@export_range(0.1, 1.0) var screen_height_ratio: float = 0.42
+## Доля кадра, спрятанная ЗА нижним краем экрана. КОНТРАКТ с будущей HUD-панелью:
+## панель займёт нижние ~12% экрана и накроет этот запас (руки «растут» из-за неё).
+@export_range(0.0, 0.5) var bottom_overhang: float = 0.10
+## Сдвиг кадра от центра экрана, в долях ширины кадра (вправо — положительный).
+## Классика DOOM: ближний бой и некоторые стволы сидят правее центра.
+@export_range(-1.0, 1.0) var horizontal_shift: float = 0.0
+
+@export_group("Покачивание (bob)")
+## Амплитуда покачивания по X/Y, в долях высоты кадра на экране.
+@export var bob_amplitude: Vector2 = Vector2(0.05, 0.03)
+## Радиан фазы покачивания на метр пройденного пути (чаще шаг — чаще качается).
+@export var bob_per_meter: float = 1.7
+## Скорость нарастания/затухания покачивания (остановился — оружие плавно замирает).
+@export var bob_damping: float = 8.0
+
 @export_group("Плейсхолдер-визуал")
 ## Размер «корпуса» ствола, px (заменим на спрайт-арт позже).
 @export var body_size: Vector2 = Vector2(84.0, 60.0)
@@ -74,6 +99,17 @@ var _ammo: AmmoComponent
 # Тело игрока (CollisionObject3D) — для исключения из луча и как owner снаряда
 # (используется наследниками, напр. RocketLauncher).
 var _body: CollisionObject3D
+# Тело игрока как CharacterBody3D (для bob: velocity/is_on_floor). null — bob выключен.
+var _char: CharacterBody3D
+
+# Анимация выстрела: время с начала, с. Отрицательное — покой (кадр 0).
+var _anim_time: float = -1.0
+# Текущий кадр стрипа.
+var _frame: int = 0
+# Фаза покачивания (радианы; наматывается от пройденного пути).
+var _bob_phase: float = 0.0
+# Сила покачивания 0..1 (плавный вход/выход через bob_damping).
+var _bob_strength: float = 0.0
 
 
 func _ready() -> void:
@@ -82,9 +118,13 @@ func _ready() -> void:
 	resized.connect(queue_redraw)
 
 	# Исключаем тело игрока из луча (камера внутри его капсулы); заодно берём AmmoComponent.
+	# Пиксель-арт не мылим (аналог Filter Off у Sprite3D, но для Canvas).
+	texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+
 	var body := _find_collision_ancestor()
 	if body != null:
 		_body = body
+		_char = body as CharacterBody3D
 		_exclude = [body.get_rid()]
 		_ammo = body.get_node_or_null("AmmoComponent") as AmmoComponent
 
@@ -95,7 +135,39 @@ func _process(delta: float) -> void:
 	if _flash_timer > 0.0:
 		_flash_timer -= delta
 		if _flash_timer <= 0.0:
-			queue_redraw()  # вспышка погасла — перерисовать без неё
+			queue_redraw()  # вспышка погасла — перерисовать без неё (плейсхолдер)
+	_advance_fire_animation(delta)
+	_update_bob(delta)
+
+
+# Листает кадры выстрела по таймеру; по окончании возвращает кадр покоя (0).
+func _advance_fire_animation(delta: float) -> void:
+	if _anim_time < 0.0:
+		return
+	_anim_time += delta
+	var next_frame: int = 1 + int(_anim_time / fire_frame_time)
+	if next_frame >= sprite_frames:
+		_anim_time = -1.0
+		next_frame = 0
+	if next_frame != _frame:
+		_frame = next_frame
+		queue_redraw()
+
+
+# Наматывает фазу покачивания от пройденного пути; на месте/в воздухе — плавно гасит.
+func _update_bob(delta: float) -> void:
+	if not visible or _char == null:
+		return
+	var target: float = 0.0
+	if _char.is_on_floor():
+		var h_speed: float = Vector2(_char.velocity.x, _char.velocity.z).length()
+		if h_speed > 0.5:
+			_bob_phase += h_speed * bob_per_meter * delta
+			target = 1.0
+	var prev: float = _bob_strength
+	_bob_strength = move_toward(_bob_strength, target, bob_damping * delta)
+	if _bob_strength > 0.001 or prev > 0.001:
+		queue_redraw()  # оружие в движении — перерисовываем
 
 
 ## Попытка выстрела (с проверкой кулдауна и патронов). Зовёт WeaponManager.
@@ -154,7 +226,10 @@ func _fire() -> void:
 
 func _show_effects() -> void:
 	_flash_timer = flash_duration
-	queue_redraw()  # показать вспышку
+	if sprite != null and sprite_frames > 1:
+		_anim_time = 0.0
+		_frame = 1
+	queue_redraw()  # показать вспышку/первый кадр выстрела
 	var ca := _combat_audio()
 	if ca != null:
 		ca.play_weapon(slot)  # звук выбирается по слоту ствола
@@ -168,8 +243,50 @@ func _combat_audio() -> CombatAudio:
 
 
 func _draw() -> void:
-	var cx: float = size.x * 0.5
-	var bottom: float = size.y
+	if sprite != null and sprite_frames > 0:
+		_draw_sprite()
+	else:
+		_draw_placeholder()
+
+
+# Текущий сдвиг покачивания в пикселях. Классика DOOM: X — маятник,
+# Y — «проседание» на полушаге (частота по Y вдвое выше за счёт abs).
+func _bob_offset(frame_height_px: float) -> Vector2:
+	return Vector2(cos(_bob_phase), absf(sin(_bob_phase))) \
+			* bob_amplitude * frame_height_px * _bob_strength
+
+
+# Экранный прямоугольник текущего кадра: нижний центр + horizontal_shift,
+# запас за краем (bottom_overhang) и покачивание. Общий для базы и наследников.
+func _frame_dest_rect() -> Rect2:
+	var frame_w: float = float(sprite.get_width()) / float(sprite_frames)
+	var frame_h: float = float(sprite.get_height())
+	var dest_h: float = size.y * screen_height_ratio
+	var dest_w: float = frame_w * (dest_h / frame_h)
+	var bob: Vector2 = _bob_offset(dest_h)
+	return Rect2(Vector2(
+			size.x * 0.5 - dest_w * 0.5 + dest_w * horizontal_shift + bob.x,
+			size.y - dest_h * (1.0 - bottom_overhang) + bob.y),
+			Vector2(dest_w, dest_h))
+
+
+# Регион текущего кадра в текстуре-стрипе.
+func _frame_src_rect() -> Rect2:
+	var frame_w: float = float(sprite.get_width()) / float(sprite_frames)
+	return Rect2(_frame * frame_w, 0.0, frame_w, float(sprite.get_height()))
+
+
+# Арт-режим: кадр стрипа по нижнему центру, с запасом за краем и покачиванием.
+# Вспышку кружками не рисуем — кадры выстрела несут её в самом арте.
+func _draw_sprite() -> void:
+	draw_texture_rect_region(sprite, _frame_dest_rect(), _frame_src_rect())
+
+
+# Плейсхолдер до назначения арта: прежние прямоугольники + вспышка, теперь с bob.
+func _draw_placeholder() -> void:
+	var bob: Vector2 = _bob_offset(size.y * screen_height_ratio)
+	var cx: float = size.x * 0.5 + bob.x
+	var bottom: float = size.y + bob.y
 	draw_rect(Rect2(cx - body_size.x * 0.5, bottom - body_size.y, body_size.x, body_size.y), body_color)
 	draw_rect(Rect2(cx - barrel_size.x * 0.5, bottom - body_size.y - barrel_size.y,
 			barrel_size.x, barrel_size.y), body_color)
