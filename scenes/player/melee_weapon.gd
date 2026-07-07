@@ -17,6 +17,11 @@ extends Weapon
 @export var pivot_ratio: Vector2 = Vector2(0.72, 0.95)
 ## Задержка нанесения урона от начала замаха, с (совпадает с «бум» в sfx_melee).
 @export var hit_delay: float = 0.16
+## Постоянный наклон молота в покое, градусы (по часовой — положительный).
+@export var idle_angle_degrees: float = 8.0
+## Насколько кадр опускается за нижний край на пике замаха, в долях высоты кадра.
+## Прячет срез руки, который иначе показывается из-за поворота.
+@export_range(0.0, 0.6) var swing_drop: float = 0.2
 
 # Время с начала замаха, с. Отрицательное — покой.
 var _swing_elapsed: float = -1.0
@@ -77,11 +82,16 @@ func _swing_angle() -> float:
 
 # Как базовый рендер кадра, но с поворотом вокруг кулака во время замаха.
 func _draw_sprite() -> void:
-	var angle: float = _swing_angle()
+	var swing: float = _swing_angle()
+	var angle: float = deg_to_rad(idle_angle_degrees) + swing
 	if absf(angle) < 0.0001:
-		super._draw_sprite()  # покой — обычная отрисовка базы (с бобом)
+		super._draw_sprite()  # ни наклона, ни замаха — обычная отрисовка базы
 		return
 	var dest: Rect2 = _frame_dest_rect()  # позиция/размер — общий расчёт базы
+	# Компенсация обрыва руки: пропорционально углу замаха опускаем кадр вниз,
+	# чтобы срез нижнего края не выезжал из-за поворота вокруг кулака.
+	if swing_degrees > 0.0:
+		dest.position.y += swing_drop * dest.size.y * absf(swing) / deg_to_rad(swing_degrees)
 	# draw_set_transform: система координат последующих draw-вызовов
 	# переносится в pivot и поворачивается — рисуем кадр ОТНОСИТЕЛЬНО кулака.
 	var pivot: Vector2 = dest.position + dest.size * pivot_ratio
