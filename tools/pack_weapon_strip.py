@@ -4,6 +4,7 @@
 Использование:
     python3 tools/pack_weapon_strip.py <лист 2x2>.png <выход>.png
     python3 tools/pack_weapon_strip.py --single <кадр>.png <выход>.png [высота=128]
+    python3 tools/pack_weapon_strip.py --frames <выход>.png <кадр1>.png <кадр2>.png [...]
 
 Вход: один квадратный лист на белом фоне, сетка 2x2:
     TL = покой (idle) | TR = начало выстрела
@@ -49,18 +50,40 @@ def key_and_crop(quad):
     return Image.fromarray(out[ys.min():ys.max() + 1, xs.min():xs.max() + 1], "RGBA")
 
 
+def finalize(img, out_path):
+    """Hard alpha (под резкий край) + палитровая квантизация (вес билда)."""
+    arr = np.array(img)
+    arr[:, :, 3] = np.where(arr[:, :, 3] >= 128, 255, 0).astype(np.uint8)
+    out = Image.fromarray(arr, "RGBA").quantize(
+        colors=48, method=Image.FASTOCTREE, dither=Image.NONE)
+    out.save(out_path, optimize=True)
+    print("saved:", out_path, img.size)
+
+
 def pack_single(in_path, out_path, height=128):
     """Одиночный кадр (ближний бой): кейинг фона + обрезка + вписывание по высоте.
     Выход — «стрип из 1 кадра», в weapon.gd назначается со sprite_frames = 1."""
     spr = key_and_crop(Image.open(in_path))
     scale = height / spr.height
-    spr = spr.resize((max(1, round(spr.width * scale)), height), Image.LANCZOS)
-    arr = np.array(spr)
-    arr[:, :, 3] = np.where(arr[:, :, 3] >= 128, 255, 0).astype(np.uint8)
-    out = Image.fromarray(arr, "RGBA").quantize(
-        colors=48, method=Image.FASTOCTREE, dither=Image.NONE)
-    out.save(out_path, optimize=True)
-    print("saved:", out_path, spr.size)
+    finalize(spr.resize((max(1, round(spr.width * scale)), height), Image.LANCZOS),
+             out_path)
+
+
+def pack_frames(out_path, frame_paths, height=128):
+    """Стрип из ОТДЕЛЬНЫХ кадров-файлов (idle + вспышки стволов): кейинг каждого,
+    единый масштаб, прижим к низу по центру. Ширина клетки — по самому широкому.
+    В weapon.gd назначается со sprite_frames = <число файлов>."""
+    sprites = [key_and_crop(Image.open(p)) for p in frame_paths]
+    scale = (height - MARGIN_TOP) / max(s.height for s in sprites)
+    cw = max(round(s.width * scale) for s in sprites) + 2 * MARGIN_X
+    strip = Image.new("RGBA", (cw * len(sprites), height), (0, 0, 0, 0))
+    for i, spr in enumerate(sprites):
+        w = max(1, round(spr.width * scale))
+        h = max(1, round(spr.height * scale))
+        spr = spr.resize((w, h), Image.LANCZOS)
+        strip.alpha_composite(spr, (i * cw + (cw - w) // 2, height - h))
+    print(f"кадров={len(sprites)}, клетка={cw}x{height}, авто-масштаб={scale:.3f}")
+    finalize(strip, out_path)
 
 
 def main(sheet_path, out_path):
@@ -78,17 +101,14 @@ def main(sheet_path, out_path):
         # Центр по горизонтали, прижим к низу клетки (руки уходят за край экрана).
         strip.alpha_composite(spr, (i * CW + (CW - w) // 2, CH - h))
 
-    arr = np.array(strip)
-    arr[:, :, 3] = np.where(arr[:, :, 3] >= 128, 255, 0).astype(np.uint8)
-    out = Image.fromarray(arr, "RGBA").quantize(
-        colors=48, method=Image.FASTOCTREE, dither=Image.NONE)
-    out.save(out_path, optimize=True)
-    print("saved:", out_path, strip.size)
+    finalize(strip, out_path)
 
 
 if __name__ == "__main__":
     if sys.argv[1] == "--single":
         pack_single(sys.argv[2], sys.argv[3],
                     int(sys.argv[4]) if len(sys.argv) > 4 else 128)
+    elif sys.argv[1] == "--frames":
+        pack_frames(sys.argv[2], sys.argv[3:])
     else:
         main(sys.argv[1], sys.argv[2])
