@@ -4,7 +4,7 @@
 
 [node name="Enemy" unique_id=360318765 instance=ExtResource("1_vc0ui")]
 move_speed = 8.0
-detection_range = 16.0
+detection_range = 30.0
 attack_damage = 10.0
 attack_cooldown = 0.6
 
