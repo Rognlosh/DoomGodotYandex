@@ -213,29 +213,21 @@ func _wire_ammo(player: Node3D) -> void:
 
 	# HUD слышит изменения любого пула, но рисует только активный тип.
 	_ammo.ammo_changed.connect(_hud.on_ammo_changed)
-	
-	# HUD слышит изменения любого пула, но рисует только активный тип.
-	_ammo.ammo_changed.connect(_hud.on_ammo_changed)
 
-	# Стартовые значения по ВСЕМ пулам — для мини-строки (пул шлёт сигнал только
+	# Стартовые значения по ВСЕМ пулам — для таблицы пулов (пул шлёт сигнал только
 	# при изменении, поэтому по одному разу пушим каждый вручную).
 	for ammo in _ammo.ammo_types:
 		if ammo != null:
 			_hud.on_ammo_changed(ammo.id, _ammo.get_ammo(ammo.id), _ammo.get_max(ammo.id))
 
-	# Стартовые значения по ВСЕМ пулам — для мини-строки (пул шлёт сигнал только
-	# при изменении, поэтому по одному разу пушим каждый вручную).
-	for ammo in _ammo.ammo_types:
-		if ammo != null:
-			_hud.on_ammo_changed(ammo.id, _ammo.get_ammo(ammo.id), _ammo.get_max(ammo.id))
-
-	# Менеджер оружия: при смене ствола обновляем активный тип патронов на HUD.
+	# Менеджер оружия: при смене ствола обновляем активный тип патронов и слот ARMS.
 	var weapons := player.get_node_or_null("WeaponLayer/Weapons") as WeaponManager
 	if weapons == null:
 		_sync_ammo_type(&"bullets")  # фолбэк, если менеджера нет
 		return
 
 	weapons.weapon_changed.connect(_on_weapon_changed)
+	_hud.set_owned_slots(weapons.get_owned_slots())
 	_on_weapon_changed(weapons.get_active_weapon())  # стартовая синхронизация
 	_wire_effects(weapons)
 
@@ -269,6 +261,8 @@ func _on_weapon_changed(weapon: Weapon) -> void:
 	if weapon == null:
 		return
 	_sync_ammo_type(weapon.ammo_type, weapon.uses_ammo)
+	if _hud != null:
+		_hud.set_active_slot(weapon.slot)
 
 
 func _sync_ammo_type(type: StringName, uses_ammo: bool = true) -> void:

@@ -88,6 +88,13 @@ func get_active_weapon() -> Weapon:
 	return _active_weapon()
 
 
+## Занятые слоты по возрастанию (для блока ARMS на HUD). Копия — наружу без риска.
+func get_owned_slots() -> Array[int]:
+	var out: Array[int] = []
+	out.assign(_ordered_slots)
+	return out
+
+
 func _active_weapon() -> Weapon:
 	return _by_slot.get(_active_slot, null) as Weapon
 
