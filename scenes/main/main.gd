@@ -223,6 +223,12 @@ func _wire_ammo(player: Node3D) -> void:
 		if ammo != null:
 			_hud.on_ammo_changed(ammo.id, _ammo.get_ammo(ammo.id), _ammo.get_max(ammo.id))
 
+	# Стартовые значения по ВСЕМ пулам — для мини-строки (пул шлёт сигнал только
+	# при изменении, поэтому по одному разу пушим каждый вручную).
+	for ammo in _ammo.ammo_types:
+		if ammo != null:
+			_hud.on_ammo_changed(ammo.id, _ammo.get_ammo(ammo.id), _ammo.get_max(ammo.id))
+
 	# Менеджер оружия: при смене ствола обновляем активный тип патронов на HUD.
 	var weapons := player.get_node_or_null("WeaponLayer/Weapons") as WeaponManager
 	if weapons == null:
