@@ -63,6 +63,11 @@ enum FireMode { SEMI, AUTO }
 ## Доля кадра, спрятанная ЗА нижним краем экрана. КОНТРАКТ с будущей HUD-панелью:
 ## панель займёт нижние ~12% экрана и накроет этот запас (руки «растут» из-за неё).
 @export_range(0.0, 0.5) var bottom_overhang: float = 0.10
+## Насколько поднять оружие вверх, в долях высоты ЭКРАНА. Оружие «тукается» за
+## нижнюю HUD-панель — кисти растут из-за неё, как в DOOM. Держи не больше, чем
+## (высота панели + bottom_overhang·высота_кадра), иначе нижний срез кадра вылезет
+## из-за панели. Панель сейчас ~0.13 высоты экрана → безопасный максимум ~0.17.
+@export_range(0.0, 0.30) var ui_tuck_ratio: float = 0.08
 ## Сдвиг кадра от центра экрана, в долях ширины кадра (вправо — положительный).
 ## Классика DOOM: ближний бой и некоторые стволы сидят правее центра.
 @export_range(-1.0, 1.0) var horizontal_shift: float = 0.0
@@ -266,7 +271,7 @@ func _frame_dest_rect() -> Rect2:
 	var bob: Vector2 = _bob_offset(dest_h)
 	return Rect2(Vector2(
 			size.x * 0.5 - dest_w * 0.5 + dest_w * horizontal_shift + bob.x,
-			size.y - dest_h * (1.0 - bottom_overhang) + bob.y),
+			size.y - dest_h * (1.0 - bottom_overhang) - size.y * ui_tuck_ratio + bob.y),
 			Vector2(dest_w, dest_h))
 
 
@@ -286,7 +291,7 @@ func _draw_sprite() -> void:
 func _draw_placeholder() -> void:
 	var bob: Vector2 = _bob_offset(size.y * screen_height_ratio)
 	var cx: float = size.x * 0.5 + bob.x
-	var bottom: float = size.y + bob.y
+	var bottom: float = size.y - size.y * ui_tuck_ratio + bob.y
 	draw_rect(Rect2(cx - body_size.x * 0.5, bottom - body_size.y, body_size.x, body_size.y), body_color)
 	draw_rect(Rect2(cx - barrel_size.x * 0.5, bottom - body_size.y - barrel_size.y,
 			barrel_size.x, barrel_size.y), body_color)
