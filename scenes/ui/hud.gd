@@ -74,6 +74,8 @@ var _pools: Dictionary = {}
 func _ready() -> void:
 	# Не перехватываем мышь — клики/выстрелы идут мимо HUD к игре.
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
+	# Пиксель-арт мугшота рисуется без сглаживания (векторные фигуры не задевает).
+	texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	# Перерисовка при ресайзе окна (важно для веба).
 	resized.connect(queue_redraw)
 

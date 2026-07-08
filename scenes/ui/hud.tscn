@@ -1,6 +1,7 @@
 [gd_scene format=3 uid="uid://bmcwnnt85t56w"]
 
 [ext_resource type="Script" uid="uid://dgrnt1kdw5gtp" path="res://scenes/ui/hud.gd" id="1_0mwgc"]
+[ext_resource type="Texture2D" uid="uid://c7mug8sd1fax2" path="res://assets/sprites/mugshot_sysadmin.png" id="2_mug"]
 
 [node name="HUD" type="CanvasLayer" unique_id=1880468031]
 
@@ -12,3 +13,4 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_0mwgc")
+mugshot_strip = ExtResource("2_mug")
