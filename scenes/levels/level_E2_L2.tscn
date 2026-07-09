@@ -1,4 +1,4 @@
-[gd_scene format=3 uid="uid://dlvldoom04gen"]
+[gd_scene format=3 uid="uid://levele2l2gen"]
 
 [ext_resource type="MeshLibrary" uid="uid://b3whaybjnchbg" path="res://scenes/levels/kit/doom_kit.tres" id="1_kit"]
 [ext_resource type="Script" uid="uid://d2rybjsije4jf" path="res://scripts/levels/ceiling_gridmap.gd" id="2_ceil"]
@@ -12,7 +12,7 @@ ambient_light_source = 2
 ambient_light_color = Color(0.55, 0.57, 0.62, 1)
 ambient_light_energy = 0.7
 
-[node name="LevelDoom04" type="Node3D"]
+[node name="LevelE2L2" type="Node3D"]
 
 [node name="Sun" type="DirectionalLight3D" parent="."]
 transform = Transform3D(0.81915206, -0.46984634, 0.32898995, 0, 0.57357645, 0.81915206, -0.57357645, -0.6710101, 0.46984634, 0, 0, 0)

@@ -12,7 +12,7 @@ ambient_light_source = 2
 ambient_light_color = Color(0.55, 0.57, 0.62, 1)
 ambient_light_energy = 0.7
 
-[node name="LevelDoom01" type="Node3D" unique_id=79152105]
+[node name="LevelE1L1" type="Node3D" unique_id=79152105]
 
 [node name="Sun" type="DirectionalLight3D" parent="." unique_id=1586677610]
 transform = Transform3D(0.81915206, -0.46984634, 0.32898995, 0, 0.57357645, 0.81915206, -0.57357645, -0.6710101, 0.46984634, 0, 0, 0)

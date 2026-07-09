@@ -1,8 +1,12 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""Генератор демо-карт кампании (level_doom_02..06).
+"""Генератор демо-карт кампании (level_E1_L2, E2_L1, E2_L2, E3_L1, E3_L2).
 
-Пишет .tscn в формате, идентичном level_doom_01.tscn (эталон — сборщик
+Имя уровня: level_E<номер эпизода>_L<номер уровня в эпизоде>. Первый уровень
+кампании (E1_L1) — level_E1_L1.tscn, его собирает build_doom_kit.gd, не этот
+генератор.
+
+Пишет .tscn в формате, идентичном level_E1_L1.tscn (эталон — сборщик
 build_doom_kit.gd + ручные правки в редакторе): корень Node3D, свет/окружение,
 GridMap-геометрия на doom_kit.tres, потолок CeilingGridMap (строится в рантайме),
 слой Entities (EntitySpawner) с маркерами спавна/выхода/врагов/пикапов.
@@ -39,7 +43,7 @@ ROT_FWD_PZ = 10   # вперёд +Z
 ROT_FWD_PX = 16   # вперёд +X
 ROT_FWD_NX = 22   # вперёд -X (для арок: проход вдоль X)
 
-# --- общие куски .tscn (эталон — level_doom_01.tscn) ---
+# --- общие куски .tscn (эталон — level_E1_L1.tscn) ---
 EXT_RESOURCES = """\
 [ext_resource type="MeshLibrary" uid="uid://b3whaybjnchbg" path="res://scenes/levels/kit/doom_kit.tres" id="1_kit"]
 [ext_resource type="Script" uid="uid://d2rybjsije4jf" path="res://scripts/levels/ceiling_gridmap.gd" id="2_ceil"]
@@ -166,7 +170,7 @@ def level_02():
         (6, 2, STIMPACK, 0), (7, 13, MEDIKIT, 0), (14, 9, ARM_GREEN, 0),
         (11, 6, HP_BONUS, 0), (11, 7, HP_BONUS, 0),
     ]
-    return "LevelDoom02", "uid://dlvldoom02gen", floor, arches, pillars, entities
+    return "LevelE1L2", "uid://levele1l2gen", floor, arches, pillars, entities
 
 
 def level_03():
@@ -195,7 +199,7 @@ def level_03():
         (8, 15, SHOOTER, 0), (12, 14, FLYER, 0), (9, 14, RUSHER, 0),
         (7, 16, MEDIKIT, 0), (10, 13, HP_BONUS, 0), (11, 13, HP_BONUS, 0),
     ]
-    return "LevelDoom03", "uid://dlvldoom03gen", floor, arches, pillars, entities
+    return "LevelE2L1", "uid://levele2l1gen", floor, arches, pillars, entities
 
 
 def level_04():
@@ -219,7 +223,7 @@ def level_04():
         # комната выхода
         (14, 7, SHOOTER, 0), (14, 11, RUSHER, 0), (13, 11, MEDIKIT, 0),
     ]
-    return "LevelDoom04", "uid://dlvldoom04gen", floor, arches, pillars, entities
+    return "LevelE2L2", "uid://levele2l2gen", floor, arches, pillars, entities
 
 
 def level_05():
@@ -247,7 +251,7 @@ def level_05():
         (2, 12, RUSHER, 0), (0, 15, SHOOTER, 0),
         (4, 13, HP_BONUS, 0), (2, 11, HP_BONUS, 0),
     ]
-    return "LevelDoom05", "uid://dlvldoom05gen", floor, arches, pillars, entities
+    return "LevelE3L1", "uid://levele3l1gen", floor, arches, pillars, entities
 
 
 def level_06():
@@ -275,7 +279,7 @@ def level_06():
         # комната выхода
         (4, 21, SHOOTER, 0), (8, 21, SHOOTER, 0), (6, 19, FLYER, 0), (4, 19, MEDIKIT, 0),
     ]
-    return "LevelDoom06", "uid://dlvldoom06gen", floor, arches, pillars, entities
+    return "LevelE3L2", "uid://levele3l2gen", floor, arches, pillars, entities
 
 
 LEVELS = [level_02, level_03, level_04, level_05, level_06]
@@ -290,7 +294,8 @@ def main():
         assert pillars <= floor, f"{name}: колонна вне пола"
         for (x, z, _i, _r) in entities:
             assert (x, z) in floor, f"{name}: маркер вне пола: {(x, z)}"
-        fname = f"level_doom_{name[-2:]}.tscn"
+        # node name "LevelE1L2" → файл "level_E1_L2.tscn"
+        fname = f"level_{name[5:7]}_{name[7:]}.tscn"
         path = os.path.join(out_dir, fname)
         with open(path, "w", encoding="utf-8", newline="\n") as f:
             f.write(render_level(name, uid, floor, arches, pillars, entities))

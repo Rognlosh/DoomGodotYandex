@@ -2,12 +2,12 @@
 
 [ext_resource type="Script" path="res://scenes/game/game.gd" id="1_game"]
 [ext_resource type="Script" uid="uid://c3episodetype" path="res://scripts/resources/episode.gd" id="2_epis"]
-[ext_resource type="PackedScene" uid="uid://v3r33p62ykvh" path="res://scenes/levels/level_doom_01.tscn" id="3_lvl01"]
-[ext_resource type="PackedScene" uid="uid://dlvldoom02gen" path="res://scenes/levels/level_doom_02.tscn" id="4_lvl02"]
-[ext_resource type="PackedScene" uid="uid://dlvldoom03gen" path="res://scenes/levels/level_doom_03.tscn" id="5_lvl03"]
-[ext_resource type="PackedScene" uid="uid://dlvldoom04gen" path="res://scenes/levels/level_doom_04.tscn" id="6_lvl04"]
-[ext_resource type="PackedScene" uid="uid://dlvldoom05gen" path="res://scenes/levels/level_doom_05.tscn" id="7_lvl05"]
-[ext_resource type="PackedScene" uid="uid://dlvldoom06gen" path="res://scenes/levels/level_doom_06.tscn" id="8_lvl06"]
+[ext_resource type="PackedScene" uid="uid://v3r33p62ykvh" path="res://scenes/levels/level_E1_L1.tscn" id="3_lvl01"]
+[ext_resource type="PackedScene" uid="uid://levele1l2gen" path="res://scenes/levels/level_E1_L2.tscn" id="4_lvl02"]
+[ext_resource type="PackedScene" uid="uid://levele2l1gen" path="res://scenes/levels/level_E2_L1.tscn" id="5_lvl03"]
+[ext_resource type="PackedScene" uid="uid://levele2l2gen" path="res://scenes/levels/level_E2_L2.tscn" id="6_lvl04"]
+[ext_resource type="PackedScene" uid="uid://levele3l1gen" path="res://scenes/levels/level_E3_L1.tscn" id="7_lvl05"]
+[ext_resource type="PackedScene" uid="uid://levele3l2gen" path="res://scenes/levels/level_E3_L2.tscn" id="8_lvl06"]
 
 [sub_resource type="Resource" id="Resource_ep1"]
 script = ExtResource("2_epis")
