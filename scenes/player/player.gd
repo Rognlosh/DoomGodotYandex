@@ -40,6 +40,8 @@ extends CharacterBody3D
 @onready var _ammo: AmmoComponent = $AmmoComponent
 # Броня игрока — отдельное звено перед HP (модель DOOM). Опциональна.
 @onready var _armor: ArmorComponent = get_node_or_null("ArmorComponent")
+# Менеджер оружия (под WeaponLayer) — для конвенции give_weapon (пикап оружия).
+@onready var _weapons: WeaponManager = $WeaponLayer/Weapons
 
 # Таймеры отзывчивости прыжка (обратный отсчёт в секундах).
 var _jump_buffer_timer: float = 0.0
@@ -74,6 +76,13 @@ func take_damage(amount: float) -> void:
 # (как take_damage — в HealthComponent). Пикап не знает о внутренностях игрока.
 func add_ammo(type: StringName, amount: int) -> int:
 	return _ammo.add_ammo(type, amount)
+
+# Конвенция выдачи оружия: тело получает ствол и делегирует в WeaponManager
+# (как add_ammo — в AmmoComponent). Пикап оружия не знает о внутренностях игрока.
+func give_weapon(slot: int) -> bool:
+	if _weapons == null:
+		return false
+	return _weapons.give_weapon(slot)
 
 # Конвенция лечения: тело лечится и делегирует в HealthComponent.
 # allow_overheal пробрасывает пикап (бонус-склянка/сфера души).

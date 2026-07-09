@@ -1,0 +1,15 @@
+[gd_scene format=3 uid="uid://bwpnbaseweap01"]
+
+[ext_resource type="PackedScene" uid="uid://ddtpb73e3c5ws" path="res://scenes/pickups/pickup_base.tscn" id="1_wpbase"]
+[ext_resource type="Script" path="res://scenes/pickups/weapon/weapon_pickup.gd" id="2_wpscr"]
+
+[node name="Pickup" unique_id=1531948811 instance=ExtResource("1_wpbase")]
+script = ExtResource("2_wpscr")
+slot = 3
+ammo_type = &""
+ammo_amount = 0
+
+[node name="Icon" parent="." index="1" unique_id=700100700]
+pixel_size = 0.02
+shape = 8
+color = Color(0.55, 0.62, 0.75, 1)
