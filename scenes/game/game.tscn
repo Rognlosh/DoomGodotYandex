@@ -1,6 +1,35 @@
-[gd_scene load_steps=2 format=3 uid="uid://bg4mfl0wr0ut3r"]
+[gd_scene load_steps=12 format=3 uid="uid://bg4mfl0wr0ut3r"]
 
 [ext_resource type="Script" path="res://scenes/game/game.gd" id="1_game"]
+[ext_resource type="Script" uid="uid://c3episodetype" path="res://scripts/resources/episode.gd" id="2_epis"]
+[ext_resource type="PackedScene" uid="uid://v3r33p62ykvh" path="res://scenes/levels/level_doom_01.tscn" id="3_lvl01"]
+[ext_resource type="PackedScene" uid="uid://dlvldoom02gen" path="res://scenes/levels/level_doom_02.tscn" id="4_lvl02"]
+[ext_resource type="PackedScene" uid="uid://dlvldoom03gen" path="res://scenes/levels/level_doom_03.tscn" id="5_lvl03"]
+[ext_resource type="PackedScene" uid="uid://dlvldoom04gen" path="res://scenes/levels/level_doom_04.tscn" id="6_lvl04"]
+[ext_resource type="PackedScene" uid="uid://dlvldoom05gen" path="res://scenes/levels/level_doom_05.tscn" id="7_lvl05"]
+[ext_resource type="PackedScene" uid="uid://dlvldoom06gen" path="res://scenes/levels/level_doom_06.tscn" id="8_lvl06"]
+
+[sub_resource type="Resource" id="Resource_ep1"]
+script = ExtResource("2_epis")
+title = "Эпизод 1: Лента по колено"
+levels = Array[PackedScene]([ExtResource("3_lvl01"), ExtResource("4_lvl02")])
+ending_text = "Лента зачищена. Но алгоритм уже подбирает новую порцию слопа — сигнал ведёт на ферму ботов."
+metadata/_custom_type_script = "uid://c3episodetype"
+
+[sub_resource type="Resource" id="Resource_ep2"]
+script = ExtResource("2_epis")
+title = "Эпизод 2: Ферма ботов"
+levels = Array[PackedScene]([ExtResource("5_lvl03"), ExtResource("6_lvl04")])
+ending_text = "Ферма ботов обесточена. Но генерация не остановилась — ядро прячется глубже, в серверной."
+metadata/_custom_type_script = "uid://c3episodetype"
+
+[sub_resource type="Resource" id="Resource_ep3"]
+script = ExtResource("2_epis")
+title = "Эпизод 3: Серверная преисподняя"
+levels = Array[PackedScene]([ExtResource("7_lvl05"), ExtResource("8_lvl06")])
+ending_text = "Ядро нейрослопа расплавлено. Интернет снова (почти) чист. Модерация никогда не спит."
+metadata/_custom_type_script = "uid://c3episodetype"
 
 [node name="Game" type="Node"]
 script = ExtResource("1_game")
+episodes = Array[ExtResource("2_epis")]([SubResource("Resource_ep1"), SubResource("Resource_ep2"), SubResource("Resource_ep3")])
