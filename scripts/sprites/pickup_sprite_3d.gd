@@ -8,8 +8,8 @@ extends Sprite3D
 ## сама отключится. @tool: иконка видна и в редакторе (для расстановки),
 ## но в .tscn не сохраняется (стрипается перед записью — сцены чистые).
 
-## Силуэт иконки. SHELL/ROCKET — задел под будущие патроны.
-enum Shape { CLIP, SHELL, ROCKET, VIAL, MEDKIT, SPHERE, VEST, HELMET }
+## Силуэт иконки. SHELL/ROCKET — задел под будущие патроны. WEAPON — пикап ствола.
+enum Shape { CLIP, SHELL, ROCKET, VIAL, MEDKIT, SPHERE, VEST, HELMET, WEAPON }
 
 ## Размер холста иконки в пикселях (квадрат). Маленький — это плейсхолдер.
 const RES: int = 32
@@ -91,6 +91,7 @@ func _build_icon() -> ImageTexture:
 		Shape.SPHERE: _draw_sphere(img)
 		Shape.VEST: _draw_vest(img)
 		Shape.HELMET: _draw_helmet(img)
+		Shape.WEAPON: _draw_weapon(img)
 	_add_outline(img, color.darkened(0.6))
 	return ImageTexture.create_from_image(img)
 
@@ -159,6 +160,19 @@ func _draw_helmet(img: Image) -> void:
 	_rect(img, 0, 18, RES, RES - 18, Color(0, 0, 0, 0))   # срезать низ купола
 	_rect(img, 6, 17, 20, 3, color)                       # козырёк
 	_rect(img, 9, 12, 14, 4, dark)                        # визор
+
+
+func _draw_weapon(img: Image) -> void:
+	# Силуэт-плейсхолдер пистолета: затвор/ствол сверху + рукоять вниз.
+	var dark: Color = color.darkened(0.4)
+	var hi: Color = color.lightened(0.25)
+	_rect(img, 6, 11, 18, 5, color)     # затвор + ствол
+	_rect(img, 6, 11, 18, 1, hi)        # верхний блик
+	_rect(img, 22, 12, 2, 2, dark)      # дуло
+	_rect(img, 15, 15, 6, 11, color)    # рукоять
+	_rect(img, 16, 17, 4, 8, dark)      # насечки рукояти
+	_rect(img, 11, 16, 5, 2, color)     # спусковая скоба
+	_px(img, 13, 18, dark)              # крючок
 
 
 # --- Растровые примитивы ----------------------------------------------------

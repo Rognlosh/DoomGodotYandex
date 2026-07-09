@@ -66,6 +66,9 @@ const MARKERS := [
 	[11, "pickup_armor_bonus", "icon_armor_bonus.png"],
 	[12, "pickup_armor_green", "icon_armor_green.png"],
 	[13, "pickup_armor_blue", "icon_armor_blue.png"],
+	[14, "pickup_weapon_shotgun", "icon_weapon_shotgun.png"],
+	[15, "pickup_weapon_machinegun", "icon_weapon_machinegun.png"],
+	[16, "pickup_weapon_rocket", "icon_weapon_rocket.png"],
 ]
 
 

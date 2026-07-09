@@ -28,6 +28,9 @@ const SCENES := {
 	11: "res://scenes/pickups/armor/armor_bonus.tscn",
 	12: "res://scenes/pickups/armor/armor_green.tscn",
 	13: "res://scenes/pickups/armor/armor_blue.tscn",
+	14: "res://scenes/pickups/weapon/shotgun_pickup.tscn",
+	15: "res://scenes/pickups/weapon/machinegun_pickup.tscn",
+	16: "res://scenes/pickups/weapon/rocket_pickup.tscn",
 }
 
 ## Высота, на которой висит летун.

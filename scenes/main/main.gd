@@ -228,6 +228,7 @@ func _wire_ammo(player: Node3D) -> void:
 
 	weapons.weapon_changed.connect(_on_weapon_changed)
 	_hud.set_owned_slots(weapons.get_owned_slots())
+	weapons.owned_changed.connect(_hud.set_owned_slots)  # ARMS обновляется при подборе ствола
 	_on_weapon_changed(weapons.get_active_weapon())  # стартовая синхронизация
 	_wire_effects(weapons)
 
