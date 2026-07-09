@@ -7,11 +7,17 @@
 [ext_resource type="Script" uid="uid://cirspvw4t2yde" path="res://scripts/effects/impact_smoke.gd" id="5_6q06x"]
 [ext_resource type="Script" uid="uid://chitstars0pow" path="res://scripts/effects/hit_stars.gd" id="6_stars"]
 [ext_resource type="Script" uid="uid://6hbrnaxldgob" path="res://scripts/effects/explosion.gd" id="7_hujxm"]
-[ext_resource type="PackedScene" uid="uid://ctestlevel2sc" path="res://scenes/levels/test_level_2.tscn" id="8_lvl2"]
+[ext_resource type="Script" uid="uid://c3episodetype" path="res://scripts/resources/episode.gd" id="8_epis"]
+
+[sub_resource type="Resource" id="Resource_debugep"]
+script = ExtResource("8_epis")
+title = "Отладка"
+levels = Array[PackedScene]([ExtResource("2_yyfjg")])
+metadata/_custom_type_script = "uid://c3episodetype"
 
 [node name="Main" type="Node3D" unique_id=505731654]
 script = ExtResource("1_k2fmo")
-levels = Array[PackedScene]([ExtResource("2_yyfjg"), ExtResource("8_lvl2")])
+episode = SubResource("Resource_debugep")
 player_scene = ExtResource("3_6q06x")
 hud_scene = ExtResource("4_l3cfh")
 
