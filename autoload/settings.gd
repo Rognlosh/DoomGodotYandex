@@ -18,6 +18,8 @@ signal mouse_sensitivity_changed(value: float)
 const _CONFIG_PATH := "user://settings.cfg"
 const _SECTION_AUDIO := "audio"
 const _SECTION_INPUT := "input"
+# Имя секции этого модуля в облачном блобе YandexSDK (Этап 4).
+const _CLOUD_SECTION := "settings"
 # Задержка перед записью на диск: частые тики ползунка схлопываются в одну запись
 # (важно для веба — user:// уходит в IndexedDB, поштучные записи дороги).
 const _SAVE_DELAY := 0.5
@@ -47,6 +49,68 @@ func _ready() -> void:
 
 	_load_config()
 	_apply_all_buses()
+
+	# Облачная синхронизация (Этап 4). YandexSDK — autoload ПОСЛЕ Settings, в наш
+	# _ready он ещё не добавлен в дерево → цепляемся отложенно. Локальные настройки
+	# уже применены выше; облако (если есть) переопределит их, когда подъедет.
+	_connect_cloud.call_deferred()
+
+
+# --------------------------------------------------------------------------
+# Облачная синхронизация (поверх локального user://)
+# --------------------------------------------------------------------------
+
+func _connect_cloud() -> void:
+	var ysdk := get_node_or_null("/root/YandexSDK")
+	if ysdk == null:
+		return
+	# Блоб мог уже загрузиться (офлайн-резолв синхронен) — тогда тянем сразу.
+	if ysdk.is_cloud_ready():
+		_pull_from_cloud(ysdk)
+	else:
+		ysdk.cloud_loaded.connect(_on_cloud_loaded)
+
+
+func _on_cloud_loaded() -> void:
+	var ysdk := get_node_or_null("/root/YandexSDK")
+	if ysdk != null:
+		_pull_from_cloud(ysdk)
+
+
+# Прочитать секцию "settings" из облачного блоба и применить (облако — источник
+# правды, когда доступно). Пусто (новый игрок) — остаёмся на локальных значениях.
+func _pull_from_cloud(ysdk: Node) -> void:
+	var data: Dictionary = ysdk.get_section(_CLOUD_SECTION)
+	if data.is_empty():
+		return
+	master_volume = clampf(float(data.get("master", master_volume)), 0.0, 1.0)
+	sfx_volume = clampf(float(data.get("sfx", sfx_volume)), 0.0, 1.0)
+	ambient_volume = clampf(float(data.get("ambient", ambient_volume)), 0.0, 1.0)
+	mouse_sensitivity = maxf(float(data.get("mouse_sensitivity", mouse_sensitivity)), 0.0)
+	_apply_all_buses()
+	mouse_sensitivity_changed.emit(mouse_sensitivity)
+	# Локальный кэш приводим к облачному, чтобы офлайн-старт не откатывал.
+	_write_config()
+
+
+# Секция настроек как Dictionary — для облачного блоба.
+func _cloud_state() -> Dictionary:
+	return {
+		"master": master_volume,
+		"sfx": sfx_volume,
+		"ambient": ambient_volume,
+		"mouse_sensitivity": mouse_sensitivity,
+	}
+
+
+# Затолкать текущие настройки в облачный блоб и запланировать флаш. Зовётся из
+# _write_config (уже под дебаунсом), поэтому серия тиков ползунка = один флаш.
+func _push_to_cloud() -> void:
+	var ysdk := get_node_or_null("/root/YandexSDK")
+	if ysdk == null:
+		return
+	ysdk.set_section(_CLOUD_SECTION, _cloud_state())
+	ysdk.flush()
 
 
 # --------------------------------------------------------------------------
@@ -113,6 +177,8 @@ func _write_config() -> void:
 	cfg.set_value(_SECTION_AUDIO, "ambient", ambient_volume)
 	cfg.set_value(_SECTION_INPUT, "mouse_sensitivity", mouse_sensitivity)
 	cfg.save(_CONFIG_PATH)
+	# Зеркалим настройки в облако (no-op вне веба). Уже под дебаунсом _save_timer.
+	_push_to_cloud()
 
 
 func _load_config() -> void:

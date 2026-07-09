@@ -17,8 +17,9 @@ const MENU_SCENE: PackedScene = preload("res://scenes/ui/menus/menu_screen.tscn"
 
 # CanvasLayer.layer базового меню; оверлеи кладутся выше (см. _open_overlay).
 const _BASE_LAYER: int = 20
-# Текст-заглушка для разделов, которые приедут с интеграцией Yandex SDK.
-const _YANDEX_STUB: String = "Появится с интеграцией Yandex Games SDK (Этап 4)."
+# Техническое имя лидерборда (создаётся в консоли разработчика Яндекса; в
+# dev-proxy — замокан). Метрика — суммарно пройдено уровней (больше = выше).
+const _LEADERBOARD: String = "progress"
 # Диапазон ползунка чувствительности мыши (радиан поворота на пиксель).
 const _SENS_MIN: float = 0.0005
 const _SENS_MAX: float = 0.01
@@ -37,12 +38,24 @@ var _main_menu: MenuScreen = null
 # Стопка оверлеев поверх базового экрана; верхний (последний) — активный.
 var _overlays: Array[MenuScreen] = []
 
+# --- Прогресс кампании (для облачного персиста и резюма, Этап 4) ---
+# Индекс текущего эпизода в `episodes` (задаётся при выборе эпизода). Пара
+# (эпизод, уровень) — ключ облачного сейва: эпизод знает роутер, уровень — сессия.
+var _episode_index: int = 0
+# Зеркало индекса уровня внутри эпизода (сессия хранит свой; держим синхронно,
+# чтобы сохранять позицию без обращения внутрь сессии).
+var _current_level_index: int = 0
+
 
 func _ready() -> void:
 	# Роутер живёт и на паузе — иначе меню перестало бы реагировать,
 	# когда мы ставим дерево на паузу для оверлея.
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	_show_main_menu()
+	# Сообщаем площадке, что игра загрузилась и готова к взаимодействию — Яндекс
+	# убирает свою «крутилку» загрузки. no-op вне веба. Идемпотентно (обёртка
+	# сама дождётся готовности SDK, если init ещё не завершился).
+	YandexSDK.notify_game_ready()
 
 
 # --------------------------------------------------------------------------
@@ -61,6 +74,7 @@ func _show_main_menu() -> void:
 		[
 			{"id": &"start", "label": "Старт"},
 			{"id": &"settings", "label": "Настройки"},
+			{"id": &"leaderboard", "label": "Рекорды"},
 			{"id": &"quit", "label": "Выход"},
 		],
 		0.0,            # без затемнения — это и есть фон
@@ -73,7 +87,8 @@ func _show_main_menu() -> void:
 
 
 # Запустить новую игровую сессию выбранного эпизода (новая игра / переигровка).
-func start_game(episode: Episode) -> void:
+# start_level — с какого уровня эпизода начать (резюм из облака; 0 = сначала).
+func start_game(episode: Episode, start_level: int = 0) -> void:
 	if episode == null or episode.levels.is_empty():
 		push_error("Game: эпизод пуст — нечего запускать.")
 		return
@@ -84,6 +99,8 @@ func start_game(episode: Episode) -> void:
 	_clear_session()
 
 	_episode = episode
+	# Кламп на случай, если сохранённый уровень уехал за границы (эпизод укоротили).
+	_current_level_index = clampi(start_level, 0, episode.levels.size() - 1)
 	_session = SESSION_SCENE.instantiate() as Node3D
 	# Роутер — ALWAYS (живёт на паузе ради меню). Без явного PAUSABLE сессия
 	# унаследовала бы ALWAYS от роутера и НЕ вставала бы на паузу — тогда игрок
@@ -92,6 +109,9 @@ func start_game(episode: Episode) -> void:
 	# Какой эпизод играть — задаём ДО add_child (перекрывает отладочный эпизод
 	# из инспектора main.tscn). Утиный set, как и сигналы ниже.
 	_session.set(&"episode", episode)
+	# Стартовый уровень внутри эпизода (резюм). Тоже ДО add_child — иначе _load_level
+	# в _ready сессии стартует с 0. no-op для start_level=0.
+	_session.call(&"set_start_level", _current_level_index)
 	# Сигналы сессии наверх. Подключаем по имени (строкой) — у роутера нет
 	# статического знания о сигналах чужого скрипта, connect() это снимает.
 	_session.connect(&"player_died", _on_player_died)
@@ -125,16 +145,21 @@ func _on_pause_requested() -> void:
 	# Уже есть оверлей — второй паузой не накрываем.
 	if not _overlays.is_empty():
 		return
+	var items: Array = [
+		{"id": &"resume", "label": "Продолжить"},
+		{"id": &"settings", "label": "Настройки"},
+		{"id": &"save", "label": "Сохранить"},
+		{"id": &"load", "label": "Загрузить"},
+	]
+	# Rewarded-реклама: пункт есть только когда платформа онлайн (в вебе под
+	# Яндексом). Вне веба SDK офлайн → пункт скрыт, меню паузы как прежде.
+	if YandexSDK.is_online():
+		items.append({"id": &"resupply_ad", "label": "Пополнить запасы (реклама)"})
+	items.append({"id": &"to_menu", "label": "В главное меню"})
 	_open_overlay(
 		"Пауза",
 		"",
-		[
-			{"id": &"resume", "label": "Продолжить"},
-			{"id": &"settings", "label": "Настройки"},
-			{"id": &"save", "label": "Сохранить"},
-			{"id": &"load", "label": "Загрузить"},
-			{"id": &"to_menu", "label": "В главное меню"},
-		],
+		items,
 		0.6,
 		&"resume",      # Esc = продолжить
 		_on_pause_selected
@@ -155,17 +180,30 @@ func _on_level_completed() -> void:
 
 
 func _on_intermission_selected(id: StringName) -> void:
-	if id == &"next":
-		# Сперва свап уровня, потом закрытие оверлея: его _refresh_mode зафиксирует
-		# режим мыши последним (иначе _ready нового игрока перебил бы захват на VISIBLE).
-		if _session != null:
-			_session.call(&"advance_level")
-		_close_top_overlay()
+	if id != &"next":
+		return
+	# Точка показа полноэкранной рекламы — на стыке уровней (Яндекс сам троттлит
+	# частоту). Ждём закрытия и только потом свапаем уровень. Вне веба обёртка
+	# отвечает мгновенно (shown=false) — поток не застревает.
+	YandexSDK.show_interstitial()
+	await YandexSDK.interstitial_finished
+	# Оверлей мог закрыться иначе за время await (напр. выход в меню) — проверяем.
+	if _session == null:
+		return
+	# Сперва свап уровня, потом закрытие оверлея: его _refresh_mode зафиксирует
+	# режим мыши последним (иначе _ready нового игрока перебил бы захват на VISIBLE).
+	_current_level_index += 1
+	_session.call(&"advance_level")
+	_save_progress()
+	_close_top_overlay()
 
 
 # Пройден последний уровень эпизода — концовка. Дальше — главное меню
 # (новый эпизод начинается оттуда со свежим лоадаутом).
 func _on_episode_completed() -> void:
+	# Эпизод пройден целиком: фиксируем прогресс и шлём очки в лидерборд.
+	_save_progress()
+	YandexSDK.leaderboard_submit(_LEADERBOARD, _levels_cleared_total())
 	var body := "Эпизод пройден."
 	if _episode != null:
 		body = _episode.ending_text if not _episode.ending_text.is_empty() \
@@ -201,6 +239,8 @@ func _on_main_menu_selected(id: StringName) -> void:
 			_open_episode_select()
 		&"settings":
 			_open_settings()
+		&"leaderboard":
+			_open_leaderboard()
 		&"quit":
 			_quit_app()
 
@@ -239,7 +279,10 @@ func _on_episode_selected(id: StringName) -> void:
 	var index := String(id).trim_prefix("ep_").to_int()
 	if index < 0 or index >= episodes.size():
 		return
-	start_game(episodes[index])
+	_episode_index = index
+	# Резюм: стартуем с самого дальнего пройденного уровня этого эпизода (облачный
+	# сейв). Нет прогресса / офлайн-первый-запуск → 0 (эпизод с начала).
+	start_game(episodes[index], _furthest_level(index))
 
 
 func _on_pause_selected(id: StringName) -> void:
@@ -249,9 +292,12 @@ func _on_pause_selected(id: StringName) -> void:
 		&"settings":
 			_open_settings()
 		&"save":
-			_open_stub("Сохранение", _YANDEX_STUB)
+			_save_progress()
+			_open_stub("Сохранение", _save_status_text("Прогресс сохранён."))
 		&"load":
-			_open_stub("Загрузка", _YANDEX_STUB)
+			_load_saved()
+		&"resupply_ad":
+			_watch_ad_for_resupply()
 		&"to_menu":
 			_show_main_menu()
 
@@ -334,6 +380,88 @@ func _open_stub(title: String, body: String) -> void:
 
 
 # --------------------------------------------------------------------------
+# Yandex SDK: прогресс кампании (облачный сейв) и лидерборд
+# --------------------------------------------------------------------------
+
+# Секция "progress" облачного блоба (общий блоб делят Settings и прогресс).
+# Форма: { "furthest": {"<эпизод>": уровень}, "last_episode": i, "last_level": j }.
+func _progress() -> Dictionary:
+	return YandexSDK.get_section("progress")
+
+
+# Самый дальний пройденный уровень эпизода (для резюма). Нет данных → 0.
+func _furthest_level(episode_index: int) -> int:
+	var furthest: Dictionary = _progress().get("furthest", {})
+	return int(furthest.get(str(episode_index), 0))
+
+
+# Записать текущую позицию (эпизод, уровень) в облако. Хранит максимум по каждому
+# эпизоду (резюм не откатывает) + последнюю позицию. Флаш — no-op вне веба (локально).
+func _save_progress() -> void:
+	var p := _progress()
+	var furthest: Dictionary = p.get("furthest", {})
+	var key := str(_episode_index)
+	furthest[key] = maxi(int(furthest.get(key, 0)), _current_level_index)
+	p["furthest"] = furthest
+	p["last_episode"] = _episode_index
+	p["last_level"] = _current_level_index
+	YandexSDK.set_section("progress", p)
+	YandexSDK.flush()
+
+
+# Очко лидерборда — суммарно достигнуто уровней по всем эпизодам (монотонно растёт).
+func _levels_cleared_total() -> int:
+	var furthest: Dictionary = _progress().get("furthest", {})
+	var total := 0
+	for k in furthest.keys():
+		total += int(furthest[k]) + 1
+	return total
+
+
+# «Загрузить» из паузы: перезапустить текущий эпизод с сохранённого уровня.
+func _load_saved() -> void:
+	if _episode == null:
+		return
+	# Закрываем паузу и стартуем сессию заново с дальнего уровня (свежий лоадаут).
+	_clear_overlays()
+	start_game(_episode, _furthest_level(_episode_index))
+
+
+func _save_status_text(msg: String) -> String:
+	return msg + ("\n(облако Яндекса)" if YandexSDK.is_online() else "\n(локально)")
+
+
+# Rewarded-реклама из паузы: за просмотр — полное пополнение HP/патронов.
+func _watch_ad_for_resupply() -> void:
+	YandexSDK.show_rewarded()
+	var rewarded: bool = await YandexSDK.rewarded_finished
+	# Сессия могла исчезнуть за время показа (выход в меню) — проверяем.
+	if not rewarded or _session == null:
+		return
+	_session.call(&"grant_resupply")
+	# Закрываем паузу — возвращаемся в бой с полными запасами.
+	_close_top_overlay()
+
+
+# «Рекорды»: тянем таблицу и показываем её текстом. Вне веба — заглушка.
+func _open_leaderboard() -> void:
+	YandexSDK.leaderboard_fetch(_LEADERBOARD)
+	var entries: Array = await YandexSDK.leaderboard_loaded
+	_open_stub("Рекорды", _format_leaderboard(entries))
+
+
+func _format_leaderboard(entries: Array) -> String:
+	if entries.is_empty():
+		return "Таблица недоступна\n(офлайн или запуск вне Яндекс Игр)."
+	var lines: PackedStringArray = []
+	for e in entries:
+		if e is Dictionary:
+			lines.append("%d. %s — %d" % [
+				int(e.get("rank", 0)), str(e.get("name", "Аноним")), int(e.get("score", 0))])
+	return "\n".join(lines)
+
+
+# --------------------------------------------------------------------------
 # Стопка оверлеев
 # --------------------------------------------------------------------------
 
@@ -407,6 +535,12 @@ func _refresh_mode() -> void:
 		Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
 	else:
 		Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
+	# GameplayAPI площадки: «активный геймплей» ровно тогда, когда мышь захвачена
+	# (в игре и без оверлея). Влияет на метрики/троттлинг рекламы. no-op вне веба.
+	if in_game and not overlay_open:
+		YandexSDK.gameplay_start()
+	else:
+		YandexSDK.gameplay_stop()
 
 
 func _quit_app() -> void:
