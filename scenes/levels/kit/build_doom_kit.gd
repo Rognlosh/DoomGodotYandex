@@ -8,7 +8,7 @@ extends EditorScript
 ##   2. строит меши: `wall` (сплошной куб) и `floor` (плита пола + плита потолка);
 ##   3. собирает `MeshLibrary` с коллизиями и сохраняет в doom_kit.tres;
 ##   4. рисует стартовый уровень (две комнаты + коридор) на GridMap, ставит
-##      спавн/выход/врагов/пикапы и сохраняет level_E1_L1.tscn.
+##      спавн/выход/врагов/пикапы и сохраняет episode_1/level_E1_L1.tscn.
 ## Идемпотентен: повторный запуск перезаписывает оба файла.
 
 # --- размеры/пути ---------------------------------------------------------
@@ -23,7 +23,7 @@ const TEX_CEIL := "res://assets/textures/tex_ceiling.png"
 
 const MESHLIB_PATH := "res://scenes/levels/kit/doom_kit.tres"
 const ENTITIES_MESHLIB_PATH := "res://scenes/levels/kit/doom_entities.tres"
-const LEVEL_PATH := "res://scenes/levels/level_E1_L1.tscn"
+const LEVEL_PATH := "res://scenes/levels/episode_1/level_E1_L1.tscn"
 
 # id предметов в MeshLibrary
 const FLOOR_ID := 0

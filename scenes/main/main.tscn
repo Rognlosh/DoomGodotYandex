@@ -1,7 +1,7 @@
 [gd_scene format=3 uid="uid://d1d163y0nt6ww"]
 
 [ext_resource type="Script" uid="uid://devn0xn8ei3hp" path="res://scenes/main/main.gd" id="1_k2fmo"]
-[ext_resource type="PackedScene" uid="uid://v3r33p62ykvh" path="res://scenes/levels/level_E1_L1.tscn" id="2_yyfjg"]
+[ext_resource type="PackedScene" uid="uid://v3r33p62ykvh" path="res://scenes/levels/episode_1/level_E1_L1.tscn" id="2_yyfjg"]
 [ext_resource type="PackedScene" uid="uid://dq8ho3pvydr6o" path="res://scenes/player/player.tscn" id="3_6q06x"]
 [ext_resource type="PackedScene" uid="uid://bmcwnnt85t56w" path="res://scenes/ui/hud.tscn" id="4_l3cfh"]
 [ext_resource type="Script" uid="uid://cirspvw4t2yde" path="res://scripts/effects/impact_smoke.gd" id="5_6q06x"]

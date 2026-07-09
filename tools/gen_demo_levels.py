@@ -2,9 +2,10 @@
 # -*- coding: utf-8 -*-
 """Генератор демо-карт кампании (level_E1_L2, E2_L1, E2_L2, E3_L1, E3_L2).
 
-Имя уровня: level_E<номер эпизода>_L<номер уровня в эпизоде>. Первый уровень
-кампании (E1_L1) — level_E1_L1.tscn, его собирает build_doom_kit.gd, не этот
-генератор.
+Раскладка: scenes/levels/episode_<N>/level_E<N>_L<уровень>.tscn — папка на
+эпизод (snake_case), в имени файла эпизод+уровень продублированы для поиска.
+Первый уровень кампании (E1_L1) — episode_1/level_E1_L1.tscn, его собирает
+build_doom_kit.gd, не этот генератор.
 
 Пишет .tscn в формате, идентичном level_E1_L1.tscn (эталон — сборщик
 build_doom_kit.gd + ручные правки в редакторе): корень Node3D, свет/окружение,
@@ -294,12 +295,15 @@ def main():
         assert pillars <= floor, f"{name}: колонна вне пола"
         for (x, z, _i, _r) in entities:
             assert (x, z) in floor, f"{name}: маркер вне пола: {(x, z)}"
-        # node name "LevelE1L2" → файл "level_E1_L2.tscn"
+        # node name "LevelE1L2" → эпизод 1 → папка episode_1, файл level_E1_L2.tscn.
+        episode_num = name[6]                       # цифра эпизода из "LevelE1L2"
         fname = f"level_{name[5:7]}_{name[7:]}.tscn"
-        path = os.path.join(out_dir, fname)
+        ep_dir = os.path.join(out_dir, f"episode_{episode_num}")
+        os.makedirs(ep_dir, exist_ok=True)
+        path = os.path.join(ep_dir, fname)
         with open(path, "w", encoding="utf-8", newline="\n") as f:
             f.write(render_level(name, uid, floor, arches, pillars, entities))
-        print(f"[gen] {fname}: пол {len(floor)}, маркеров {len(entities)}")
+        print(f"[gen] episode_{episode_num}/{fname}: пол {len(floor)}, маркеров {len(entities)}")
 
 
 if __name__ == "__main__":
