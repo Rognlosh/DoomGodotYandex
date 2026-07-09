@@ -103,5 +103,5 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -5.0803967, 4.7683716e-07, 2.
 [node name="Pickup12" parent="." unique_id=1161971198 instance=ExtResource("12_fqldq")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.438869, 0, 2.2852874)
 
-[node name="LevelExit" parent="." instance=ExtResource("20_lexit")]
+[node name="LevelExit" parent="." unique_id=520977308 instance=ExtResource("20_lexit")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -16)

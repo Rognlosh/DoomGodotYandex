@@ -23,8 +23,15 @@ const _YANDEX_STUB: String = "Появится с интеграцией Yandex 
 const _SENS_MIN: float = 0.0005
 const _SENS_MAX: float = 0.01
 
+## Эпизоды кампании по порядку (настраиваются в инспекторе game.tscn).
+## Сессия играет один эпизод; между эпизодами лоадаут сбрасывается сам —
+## новая сессия = свежий игрок (модель «классика DOOM»).
+@export var episodes: Array[Episode]
+
 # Текущая игровая сессия (Node3D "Main") или null, если мы в главном меню.
 var _session: Node3D = null
+# Эпизод, который играет текущая сессия (для «Заново» на экранах смерти/концовки).
+var _episode: Episode = null
 # Главное меню (базовый экран, когда сессии нет) или null.
 var _main_menu: MenuScreen = null
 # Стопка оверлеев поверх базового экрана; верхний (последний) — активный.
@@ -65,26 +72,33 @@ func _show_main_menu() -> void:
 	_refresh_mode()
 
 
-# Запустить новую игровую сессию (новая игра / рестарт).
-func start_game() -> void:
+# Запустить новую игровую сессию выбранного эпизода (новая игра / переигровка).
+func start_game(episode: Episode) -> void:
+	if episode == null or episode.levels.is_empty():
+		push_error("Game: эпизод пуст — нечего запускать.")
+		return
 	if _main_menu != null:
 		_main_menu.queue_free()
 		_main_menu = null
 	_clear_overlays()
 	_clear_session()
 
+	_episode = episode
 	_session = SESSION_SCENE.instantiate() as Node3D
 	# Роутер — ALWAYS (живёт на паузе ради меню). Без явного PAUSABLE сессия
 	# унаследовала бы ALWAYS от роутера и НЕ вставала бы на паузу — тогда игрок
 	# продолжал бы ловить ввод и перехватывал клики по кнопкам меню.
 	_session.process_mode = Node.PROCESS_MODE_PAUSABLE
+	# Какой эпизод играть — задаём ДО add_child (перекрывает отладочный эпизод
+	# из инспектора main.tscn). Утиный set, как и сигналы ниже.
+	_session.set(&"episode", episode)
 	# Сигналы сессии наверх. Подключаем по имени (строкой) — у роутера нет
 	# статического знания о сигналах чужого скрипта, connect() это снимает.
 	_session.connect(&"player_died", _on_player_died)
 	_session.connect(&"pause_requested", _on_pause_requested)
-	# Поток уровней: пройден уровень / пройдена кампания → роутер показывает экран.
+	# Поток уровней: пройден уровень / пройден эпизод → роутер показывает экран.
 	_session.connect(&"level_completed", _on_level_completed)
-	_session.connect(&"campaign_completed", _on_campaign_completed)
+	_session.connect(&"episode_completed", _on_episode_completed)
 	add_child(_session)
 	_refresh_mode()
 
@@ -149,25 +163,30 @@ func _on_intermission_selected(id: StringName) -> void:
 		_close_top_overlay()
 
 
-# Пройден последний уровень — экран победы.
-func _on_campaign_completed() -> void:
+# Пройден последний уровень эпизода — концовка. Дальше — главное меню
+# (новый эпизод начинается оттуда со свежим лоадаутом).
+func _on_episode_completed() -> void:
+	var body := "Эпизод пройден."
+	if _episode != null:
+		body = _episode.ending_text if not _episode.ending_text.is_empty() \
+				else "«%s» — пройден." % _episode.title
 	_open_overlay(
-		"ПОБЕДА",
-		"Вы прошли все уровни.",
+		"ЭПИЗОД ПРОЙДЕН",
+		body,
 		[
-			{"id": &"replay", "label": "Заново"},
 			{"id": &"to_menu", "label": "В главное меню"},
+			{"id": &"replay", "label": "Переиграть эпизод"},
 		],
-		0.92,           # почти непрозрачно — это финальный экран
+		0.92,           # почти непрозрачно — это финальный экран эпизода
 		&"",            # Esc не закрывает
-		_on_victory_selected
+		_on_episode_end_selected
 	)
 
 
-func _on_victory_selected(id: StringName) -> void:
+func _on_episode_end_selected(id: StringName) -> void:
 	match id:
 		&"replay":
-			start_game()    # свежая кампания с уровня 0 (новая сессия)
+			start_game(_episode)    # тот же эпизод с уровня 0 (новая сессия)
 		&"to_menu":
 			_show_main_menu()
 
@@ -179,11 +198,48 @@ func _on_victory_selected(id: StringName) -> void:
 func _on_main_menu_selected(id: StringName) -> void:
 	match id:
 		&"start":
-			start_game()
+			_open_episode_select()
 		&"settings":
 			_open_settings()
 		&"quit":
 			_quit_app()
+
+
+# --------------------------------------------------------------------------
+# Выбор эпизода
+# --------------------------------------------------------------------------
+
+# «Старт» → экран выбора эпизода (тот же MenuScreen: кнопка на эпизод + «Назад»).
+func _open_episode_select() -> void:
+	if episodes.is_empty():
+		push_error("Game: не назначены эпизоды (инспектор game.tscn).")
+		return
+	var items: Array = []
+	for i in episodes.size():
+		var ep := episodes[i]
+		if ep == null:
+			continue
+		# id несёт индекс эпизода — разбирается в _on_episode_selected.
+		items.append({"id": StringName("ep_%d" % i), "label": ep.title})
+	items.append({"id": &"back", "label": "Назад"})
+	_open_overlay(
+		"Выбор эпизода",
+		"",
+		items,
+		0.92,           # почти непрозрачно — это отдельный экран
+		&"back",        # Esc = назад в главное меню
+		_on_episode_selected
+	)
+
+
+func _on_episode_selected(id: StringName) -> void:
+	if id == &"back":
+		_close_top_overlay()
+		return
+	var index := String(id).trim_prefix("ep_").to_int()
+	if index < 0 or index >= episodes.size():
+		return
+	start_game(episodes[index])
 
 
 func _on_pause_selected(id: StringName) -> void:

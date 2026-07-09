@@ -5,7 +5,7 @@ extends EditorScript
 ##
 ## Перед запуском:
 ##   1) один раз прогони build_doom_kit.gd (он соберёт doom_entities.tres);
-##   2) открой нужный уровень (напр. level_doom_01.tscn);
+##   2) открой нужный уровень (напр. level_E1_L1.tscn);
 ##   3) File → Run на этом файле.
 ## Потом сохрани сцену (Ctrl+S) и рисуй маркеры на слое Entities.
 
