@@ -17,9 +17,10 @@ const MENU_SCENE: PackedScene = preload("res://scenes/ui/menus/menu_screen.tscn"
 
 # CanvasLayer.layer базового меню; оверлеи кладутся выше (см. _open_overlay).
 const _BASE_LAYER: int = 20
-# Техническое имя лидерборда (создаётся в консоли разработчика Яндекса; в
-# dev-proxy — замокан). Метрика — суммарно пройдено уровней (больше = выше).
-const _LEADERBOARD: String = "progress"
+# ЛИДЕРБОРД ОТЛОЖЕН ДО ПОСТРЕЛИЗА (2026-07-11): метрика/авторизация недоработаны,
+# наработки закомментированы (вернуть — расскомментировать здесь и ниже по файлу,
+# плюс в autoload/yandex_sdk.gd методы leaderboard_*/auth дремлют готовыми).
+# const _LEADERBOARD: String = "progress"
 # Диапазон ползунка чувствительности мыши (радиан поворота на пиксель).
 const _SENS_MIN: float = 0.0005
 const _SENS_MAX: float = 0.01
@@ -83,7 +84,7 @@ func _show_main_menu() -> void:
 	if _has_save():
 		items.append({"id": &"continue", "label": "Продолжить"})
 	items.append({"id": &"settings", "label": "Настройки"})
-	items.append({"id": &"leaderboard", "label": "Рекорды"})
+	# ЛИДЕРБОРД ОТЛОЖЕН: items.append({"id": &"leaderboard", "label": "Рекорды"})
 	items.append({"id": &"quit", "label": "Выход"})
 	_main_menu = _make_menu(
 		"DOOM-like",
@@ -216,9 +217,9 @@ func _on_intermission_selected(id: StringName) -> void:
 # Пройден последний уровень эпизода — концовка. Дальше — главное меню
 # (новый эпизод начинается оттуда со свежим лоадаутом).
 func _on_episode_completed() -> void:
-	# Эпизод пройден целиком: фиксируем прогресс и шлём очки в лидерборд.
+	# Эпизод пройден целиком: фиксируем прогресс. (Отправка очков в лидерборд отложена.)
 	_save_progress()
-	YandexSDK.leaderboard_submit(_LEADERBOARD, _levels_cleared_total())
+	# ЛИДЕРБОРД ОТЛОЖЕН: YandexSDK.leaderboard_submit(_LEADERBOARD, _levels_cleared_total())
 	var body := "Эпизод пройден."
 	if _episode != null:
 		body = _episode.ending_text if not _episode.ending_text.is_empty() \
@@ -256,8 +257,9 @@ func _on_main_menu_selected(id: StringName) -> void:
 			_continue_saved()
 		&"settings":
 			_open_settings()
-		&"leaderboard":
-			_open_leaderboard()
+		# ЛИДЕРБОРД ОТЛОЖЕН:
+		# &"leaderboard":
+		# 	_open_leaderboard()
 		&"quit":
 			_quit_app()
 
@@ -446,13 +448,13 @@ func _save_progress() -> void:
 	YandexSDK.flush()
 
 
-# Очко лидерборда — суммарно достигнуто уровней по всем эпизодам (монотонно растёт).
-func _levels_cleared_total() -> int:
-	var furthest: Dictionary = _progress().get("furthest", {})
-	var total := 0
-	for k in furthest.keys():
-		total += int(furthest[k]) + 1
-	return total
+# ЛИДЕРБОРД ОТЛОЖЕН ДО ПОСТРЕЛИЗА (2026-07-11). Очко — суммарно достигнуто уровней.
+# func _levels_cleared_total() -> int:
+# 	var furthest: Dictionary = _progress().get("furthest", {})
+# 	var total := 0
+# 	for k in furthest.keys():
+# 		total += int(furthest[k]) + 1
+# 	return total
 
 
 # «Загрузить» из паузы: перезапустить текущий эпизод с сохранённого уровня.
@@ -480,45 +482,45 @@ func _watch_ad_for_resupply() -> void:
 	_close_top_overlay()
 
 
-# «Рекорды»: тянем таблицу и показываем её текстом. Гость видит таблицу, но в неё
-# не попадает (setScore только для авторизованных) — предлагаем войти. Вне веба — заглушка.
-func _open_leaderboard() -> void:
-	YandexSDK.leaderboard_fetch(_LEADERBOARD)
-	var entries: Array = await YandexSDK.leaderboard_loaded
-	var body := _format_leaderboard(entries)
-	var items: Array = []
-	if YandexSDK.is_online() and not YandexSDK.is_authorized():
-		body += "\n\nВойдите, чтобы попадать в таблицу."
-		items.append({"id": &"login", "label": "Войти"})
-	items.append({"id": &"back", "label": "Назад"})
-	_open_overlay("Рекорды", body, items, 0.92, &"back", _on_leaderboard_selected)
-
-
-func _on_leaderboard_selected(id: StringName) -> void:
-	match id:
-		&"login":
-			YandexSDK.open_auth()
-			var ok: bool = await YandexSDK.auth_finished
-			_close_top_overlay()
-			if ok:
-				_open_leaderboard()  # перечитать таблицу уже авторизованным
-		&"back":
-			_close_top_overlay()
-
-
-func _format_leaderboard(entries: Array) -> String:
-	if entries.is_empty():
-		# Онлайн, но пусто — борд ещё не создан в консоли или нет записей.
-		# Офлайн (десктоп/вне Яндекса) — SDK недоступен.
-		if YandexSDK.is_online():
-			return "Пока нет записей\n(или лидерборд «progress» не создан в консоли)."
-		return "Таблица недоступна\n(офлайн или запуск вне Яндекс Игр)."
-	var lines: PackedStringArray = []
-	for e in entries:
-		if e is Dictionary:
-			lines.append("%d. %s — %d" % [
-				int(e.get("rank", 0)), str(e.get("name", "Аноним")), int(e.get("score", 0))])
-	return "\n".join(lines)
+# ЛИДЕРБОРД ОТЛОЖЕН ДО ПОСТРЕЛИЗА (2026-07-11). Экран «Рекорды» + вход гостя.
+# Наработки сохранены закомментированными — вернуть: расскомментировать этот блок,
+# пункт меню «Рекорды», ветку match в _on_main_menu_selected, submit в _on_episode_completed
+# и константу _LEADERBOARD (методы обёртки leaderboard_*/auth уже готовы и дремлют).
+# func _open_leaderboard() -> void:
+# 	YandexSDK.leaderboard_fetch(_LEADERBOARD)
+# 	var entries: Array = await YandexSDK.leaderboard_loaded
+# 	var body := _format_leaderboard(entries)
+# 	var items: Array = []
+# 	if YandexSDK.is_online() and not YandexSDK.is_authorized():
+# 		body += "\n\nВойдите, чтобы попадать в таблицу."
+# 		items.append({"id": &"login", "label": "Войти"})
+# 	items.append({"id": &"back", "label": "Назад"})
+# 	_open_overlay("Рекорды", body, items, 0.92, &"back", _on_leaderboard_selected)
+#
+#
+# func _on_leaderboard_selected(id: StringName) -> void:
+# 	match id:
+# 		&"login":
+# 			YandexSDK.open_auth()
+# 			var ok: bool = await YandexSDK.auth_finished
+# 			_close_top_overlay()
+# 			if ok:
+# 				_open_leaderboard()  # перечитать таблицу уже авторизованным
+# 		&"back":
+# 			_close_top_overlay()
+#
+#
+# func _format_leaderboard(entries: Array) -> String:
+# 	if entries.is_empty():
+# 		if YandexSDK.is_online():
+# 			return "Пока нет записей\n(или лидерборд «progress» не создан в консоли)."
+# 		return "Таблица недоступна\n(офлайн или запуск вне Яндекс Игр)."
+# 	var lines: PackedStringArray = []
+# 	for e in entries:
+# 		if e is Dictionary:
+# 			lines.append("%d. %s — %d" % [
+# 				int(e.get("rank", 0)), str(e.get("name", "Аноним")), int(e.get("score", 0))])
+# 	return "\n".join(lines)
 
 
 # --------------------------------------------------------------------------
