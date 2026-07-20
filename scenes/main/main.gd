@@ -95,6 +95,18 @@ func restart_level() -> void:
 	_load_level(true)
 
 
+# Награда за rewarded-рекламу (роутер зовёт после засчитанного просмотра из паузы):
+# полностью восстановить здоровье и боезапас живого игрока. Утиные вызовы, как
+# take_damage/add_ammo — сессия не держит статической ссылки на скрипт игрока.
+func grant_resupply() -> void:
+	if _player != null and _player.has_method("heal"):
+		_player.call("heal", 100.0, false)  # heal клампит по max_health
+	if _ammo != null:
+		for ammo in _ammo.ammo_types:
+			if ammo != null:
+				_ammo.add_ammo(ammo.id, _ammo.get_max(ammo.id))  # add_ammo клампит по max
+
+
 # Загрузить уровень по текущему индексу. fresh_player=true — пересоздать игрока
 # (старт/рестарт); false — оставить текущего (переход между уровнями).
 func _load_level(fresh_player: bool) -> void:
