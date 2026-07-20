@@ -23,6 +23,13 @@ extends Control
 @export var bevel_light: Color = Color(0.74, 0.72, 0.68)
 ## Тёмная грань фаски (низ-право).
 @export var bevel_dark: Color = Color(0.24, 0.23, 0.21)
+## Безопасное поле СЛЕВА (доля ширины панели): содержимое не заходит в край.
+## Фон панели остаётся во всю ширину — двигается только начинка.
+@export_range(0.0, 0.3, 0.005) var safe_left_ratio: float = 0.0
+## Безопасное поле СПРАВА (доля ширины панели). Правая рекламная колонка портала
+## Яндекса — непрозрачный оверлей поверх края канваса; правый бокс HUD уходил под
+## неё. Инсет уводит таблицу пулов левее рейла. Подкрутить под фактическую ширину.
+@export_range(0.0, 0.3, 0.005) var safe_right_ratio: float = 0.16
 
 @export_group("Числа")
 ## Цвет крупных чисел (ПАТРОНЫ/РАССУДОК/АДБЛОК) — думовский красный.
@@ -151,9 +158,14 @@ func _draw() -> void:
 	draw_rect(panel, panel_fill)
 	_bevel(panel, true)
 
+	# Безопасная зона: фон панели во всю ширину, а содержимое (inner) уводим от
+	# краёв, чтобы правый бокс не прятался под рекламный оверлей портала.
 	var pad := h * 0.10
-	var inner := Rect2(panel.position + Vector2(pad, pad),
-			panel.size - Vector2(pad * 2.0, pad * 2.0))
+	var safe_l := panel.size.x * safe_left_ratio
+	var safe_r := panel.size.x * safe_right_ratio
+	var inner := Rect2(
+			panel.position + Vector2(pad + safe_l, pad),
+			panel.size - Vector2(pad * 2.0 + safe_l + safe_r, pad * 2.0))
 
 	# Мугшот — квадрат по высоте, по центру панели.
 	var face_side := inner.size.y
