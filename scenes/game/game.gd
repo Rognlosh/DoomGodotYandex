@@ -56,6 +56,16 @@ func _ready() -> void:
 	# убирает свою «крутилку» загрузки. no-op вне веба. Идемпотентно (обёртка
 	# сама дождётся готовности SDK, если init ещё не завершился).
 	YandexSDK.notify_game_ready()
+	# Облачный сейв подъезжает асинхронно (в вебе — после init). Когда придёт,
+	# пере-соберём главное меню: если есть сохранение, в нём появится «Продолжить».
+	YandexSDK.cloud_loaded.connect(_on_cloud_loaded_menu)
+
+
+# Облако загрузилось: если мы всё ещё в главном меню — пересоберём его, чтобы
+# показать/скрыть «Продолжить» по факту наличия сейва.
+func _on_cloud_loaded_menu() -> void:
+	if _session == null and _overlays.is_empty() and _main_menu != null:
+		_show_main_menu()
 
 
 # --------------------------------------------------------------------------
@@ -68,15 +78,17 @@ func _show_main_menu() -> void:
 	_clear_overlays()
 	if _main_menu != null:
 		_main_menu.queue_free()
+	var items: Array = [{"id": &"start", "label": "Старт"}]
+	# «Продолжить» — только если есть сохранённая позиция (последний эпизод/уровень).
+	if _has_save():
+		items.append({"id": &"continue", "label": "Продолжить"})
+	items.append({"id": &"settings", "label": "Настройки"})
+	items.append({"id": &"leaderboard", "label": "Рекорды"})
+	items.append({"id": &"quit", "label": "Выход"})
 	_main_menu = _make_menu(
 		"DOOM-like",
 		"",
-		[
-			{"id": &"start", "label": "Старт"},
-			{"id": &"settings", "label": "Настройки"},
-			{"id": &"leaderboard", "label": "Рекорды"},
-			{"id": &"quit", "label": "Выход"},
-		],
+		items,
 		0.0,            # без затемнения — это и есть фон
 		&"",            # Esc в главном меню ничего не делает
 		_BASE_LAYER
@@ -121,6 +133,9 @@ func start_game(episode: Episode, start_level: int = 0) -> void:
 	_session.connect(&"episode_completed", _on_episode_completed)
 	add_child(_session)
 	_refresh_mode()
+	# Фиксируем текущую позицию в сейв сразу на старте — чтобы «Продолжить»
+	# возобновляло даже с 1-го уровня (полноценная система сохранений).
+	_save_progress()
 
 
 # --------------------------------------------------------------------------
@@ -237,6 +252,8 @@ func _on_main_menu_selected(id: StringName) -> void:
 	match id:
 		&"start":
 			_open_episode_select()
+		&"continue":
+			_continue_saved()
 		&"settings":
 			_open_settings()
 		&"leaderboard":
@@ -280,9 +297,9 @@ func _on_episode_selected(id: StringName) -> void:
 	if index < 0 or index >= episodes.size():
 		return
 	_episode_index = index
-	# Резюм: стартуем с самого дальнего пройденного уровня этого эпизода (облачный
-	# сейв). Нет прогресса / офлайн-первый-запуск → 0 (эпизод с начала).
-	start_game(episodes[index], _furthest_level(index))
+	# Выбор главы ВСЕГДА стартует с 1-го уровня (решение 2026-07-10). Продолжение
+	# с сохранённой позиции — отдельной кнопкой «Продолжить» в главном меню.
+	start_game(episodes[index], 0)
 
 
 func _on_pause_selected(id: StringName) -> void:
@@ -395,6 +412,26 @@ func _furthest_level(episode_index: int) -> int:
 	return int(furthest.get(str(episode_index), 0))
 
 
+# Есть ли сохранённая позиция для «Продолжить» (валидный последний эпизод).
+func _has_save() -> bool:
+	var p := _progress()
+	if not p.has("last_episode"):
+		return false
+	var ep := int(p.get("last_episode", -1))
+	return ep >= 0 and ep < episodes.size() and episodes[ep] != null
+
+
+# «Продолжить» из главного меню: возобновить последнюю сохранённую позицию.
+func _continue_saved() -> void:
+	var p := _progress()
+	var ep := int(p.get("last_episode", 0))
+	var lvl := int(p.get("last_level", 0))
+	if ep < 0 or ep >= episodes.size() or episodes[ep] == null:
+		return
+	_episode_index = ep
+	start_game(episodes[ep], lvl)
+
+
 # Записать текущую позицию (эпизод, уровень) в облако. Хранит максимум по каждому
 # эпизоду (резюм не откатывает) + последнюю позицию. Флаш — no-op вне веба (локально).
 func _save_progress() -> void:
@@ -452,6 +489,10 @@ func _open_leaderboard() -> void:
 
 func _format_leaderboard(entries: Array) -> String:
 	if entries.is_empty():
+		# Онлайн, но пусто — борд ещё не создан в консоли или нет записей.
+		# Офлайн (десктоп/вне Яндекса) — SDK недоступен.
+		if YandexSDK.is_online():
+			return "Пока нет записей\n(или лидерборд «progress» не создан в консоли)."
 		return "Таблица недоступна\n(офлайн или запуск вне Яндекс Игр)."
 	var lines: PackedStringArray = []
 	for e in entries:
