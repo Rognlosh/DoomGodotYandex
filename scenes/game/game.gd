@@ -480,11 +480,30 @@ func _watch_ad_for_resupply() -> void:
 	_close_top_overlay()
 
 
-# «Рекорды»: тянем таблицу и показываем её текстом. Вне веба — заглушка.
+# «Рекорды»: тянем таблицу и показываем её текстом. Гость видит таблицу, но в неё
+# не попадает (setScore только для авторизованных) — предлагаем войти. Вне веба — заглушка.
 func _open_leaderboard() -> void:
 	YandexSDK.leaderboard_fetch(_LEADERBOARD)
 	var entries: Array = await YandexSDK.leaderboard_loaded
-	_open_stub("Рекорды", _format_leaderboard(entries))
+	var body := _format_leaderboard(entries)
+	var items: Array = []
+	if YandexSDK.is_online() and not YandexSDK.is_authorized():
+		body += "\n\nВойдите, чтобы попадать в таблицу."
+		items.append({"id": &"login", "label": "Войти"})
+	items.append({"id": &"back", "label": "Назад"})
+	_open_overlay("Рекорды", body, items, 0.92, &"back", _on_leaderboard_selected)
+
+
+func _on_leaderboard_selected(id: StringName) -> void:
+	match id:
+		&"login":
+			YandexSDK.open_auth()
+			var ok: bool = await YandexSDK.auth_finished
+			_close_top_overlay()
+			if ok:
+				_open_leaderboard()  # перечитать таблицу уже авторизованным
+		&"back":
+			_close_top_overlay()
 
 
 func _format_leaderboard(entries: Array) -> String:

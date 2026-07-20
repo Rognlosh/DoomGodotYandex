@@ -45,6 +45,10 @@ signal rewarded_finished(rewarded: bool)
 ## Таблица лидерборда загружена. entries: Array[Dictionary] {rank, score, name}.
 signal leaderboard_loaded(entries: Array)
 
+# --- Авторизация ---
+## Диалог входа завершён. ok — игрок авторизовался (можно слать очки в лидерборд).
+signal auth_finished(ok: bool)
+
 # Путь локального фолбэк-сейва (тот же блоб, что ушёл бы в облако). В вебе Godot
 # кладёт user:// в IndexedDB; на десктопе — в реальную папку user://.
 const _FALLBACK_PATH := "user://cloud_save.json"
@@ -64,6 +68,10 @@ var _lang: String = "ru"
 var _cloud: Dictionary = {}
 # Блоб уже загружен (из облака или фолбэка) — потребители могут читать секции.
 var _cloud_ready: bool = false
+# Дедуп записи: JSON последнего УСПЕШНО записанного блоба и «в полёте».
+# Идентичный flush пропускаем (dev-proxy ругается на неизменные данные).
+var _last_flushed_json: String = ""
+var _pending_flush_json: String = ""
 
 # LoadingAPI.ready() надо позвать один раз, когда игра готова к взаимодействию.
 # Флаг «просили» — если init ещё не готов, позовём, как только станет online.
@@ -75,6 +83,8 @@ var _window: JavaScriptObject = null
 var _js: JavaScriptObject = null
 # Таймер опроса готовности init (промис резолвится не мгновенно).
 var _poll_timer: Timer = null
+# Таймер опроса результата диалога авторизации (промис тоже асинхронный).
+var _auth_poll: Timer = null
 
 # Ссылки на активные JS-колбэки: create_callback нельзя дать уехать в GC, пока
 # промис не вызвал его. Держим по одному на тип операции (операции не пересекаются).
@@ -229,11 +239,19 @@ func set_section(key: String, data: Dictionary) -> void:
 ## Сохранить весь блоб (облако или локальный фолбэк). Завершение — save_finished(ok).
 func flush() -> void:
 	var json := JSON.stringify(_cloud)
+	# Блоб не изменился с прошлой УСПЕШНОЙ записи — не тревожим setData повторно
+	# (dev-proxy Яндекса на это ругается «data does not differ»; в проде — лишний трафик).
+	if json == _last_flushed_json:
+		save_finished.emit.call_deferred(true)
+		return
 	if _online and _js != null:
+		_pending_flush_json = json
 		_cb_save = JavaScriptBridge.create_callback(_on_save_result)
 		_js.saveData(json, _cb_save)
 	else:
 		var ok := _write_fallback(json)
+		if ok:
+			_last_flushed_json = json
 		# Единый контракт «метод → сигнал»: даже локально отвечаем сигналом,
 		# отложенно (потребитель успевает подписаться после вызова).
 		save_finished.emit.call_deferred(ok)
@@ -268,7 +286,11 @@ func _finish_cloud_load() -> void:
 
 func _on_save_result(args: Array) -> void:
 	var payload: Dictionary = _parse(args)
-	save_finished.emit(bool(payload.get("ok", false)))
+	var ok := bool(payload.get("ok", false))
+	if ok:
+		# Запоминаем успешно записанный блоб — следующий идентичный flush пропустим.
+		_last_flushed_json = _pending_flush_json
+	save_finished.emit(ok)
 
 
 # --- Локальный фолбэк (тот же блоб на диск/IndexedDB) ---
@@ -369,6 +391,61 @@ func _on_lb_get_result(args: Array) -> void:
 	var payload: Dictionary = _parse(args)
 	var entries: Variant = payload.get("entries", [])
 	leaderboard_loaded.emit(entries if entries is Array else [])
+
+
+# --------------------------------------------------------------------------
+# Авторизация (нужна, чтобы слать очки в лидерборд)
+# --------------------------------------------------------------------------
+
+## Авторизован ли игрок сейчас. Лидерборд принимает setScore только от авторизованных;
+## гость может лишь читать таблицу. Синхронно через eval (isAuthorized — синхронный).
+func is_authorized() -> bool:
+	if not (_online and _js != null):
+		return false
+	var code := "(window.GodotYSDK && window.GodotYSDK.player && " \
+		+ "typeof window.GodotYSDK.player.isAuthorized === 'function') " \
+		+ "? !!window.GodotYSDK.player.isAuthorized() : false"
+	return bool(JavaScriptBridge.eval(code, true))
+
+
+## Открыть диалог входа Яндекса. Завершение — auth_finished(ok). Через eval, чтобы
+## не менять head_include: снаружи стартуем промис, результат кладём в флаг и опрашиваем.
+func open_auth() -> void:
+	if not (_online and _js != null):
+		auth_finished.emit.call_deferred(false)
+		return
+	# Стартуем диалог; по успеху перечитываем игрока (станет авторизованным) и
+	# выставляем флаг __auth_state, который опрашиваем таймером.
+	var code := """
+	(function () {
+		var G = window.GodotYSDK;
+		if (!G || !G.ysdk || !G.ysdk.auth) { return; }
+		G.__auth_state = 'pending';
+		G.ysdk.auth.openAuthDialog().then(function () {
+			return G.ysdk.getPlayer({ scopes: false }).then(function (p) { G.player = p; });
+		}).then(function () { G.__auth_state = 'ok'; })
+		.catch(function () { G.__auth_state = 'fail'; });
+	})();
+	"""
+	JavaScriptBridge.eval(code, true)
+	if _auth_poll == null:
+		_auth_poll = Timer.new()
+		_auth_poll.wait_time = 0.2
+		_auth_poll.one_shot = false
+		_auth_poll.timeout.connect(_poll_auth)
+		add_child(_auth_poll)
+	_auth_poll.start()
+
+
+func _poll_auth() -> void:
+	var state := str(JavaScriptBridge.eval(
+		"window.GodotYSDK ? (window.GodotYSDK.__auth_state || '') : ''", true))
+	if state == "ok":
+		_auth_poll.stop()
+		auth_finished.emit(true)
+	elif state == "fail":
+		_auth_poll.stop()
+		auth_finished.emit(false)
 
 
 # --------------------------------------------------------------------------
